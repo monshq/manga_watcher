@@ -19,6 +19,7 @@ defmodule MangaWatcherWeb.Router do
 
     get "/", SeriesController, :home
     get "/series/new", SeriesController, :new
+    post "/series", SeriesController, :create
     patch "/series/update", SeriesController, :update_all
     patch "/series/:id/read", SeriesController, :read
   end

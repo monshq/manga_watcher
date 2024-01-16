@@ -52,8 +52,11 @@ defmodule MangaWatcher.Series do
 
   """
   def create_manga(attrs \\ %{}) do
+    manga_attrs = parse_manga(attrs["url"])
+    manga_attrs = Map.put(manga_attrs, :last_read_chapter, manga_attrs.last_chapter)
+
     %Manga{}
-    |> Manga.create_changeset(parse_manga(attrs[:url]))
+    |> Manga.create_changeset(manga_attrs)
     |> Repo.insert()
   end
 
@@ -79,11 +82,15 @@ defmodule MangaWatcher.Series do
     Logger.info("starting update of all mangas")
     mangas = list_mangas()
 
-    Enum.each(mangas, fn m ->
-      update_manga(m, parse_manga(m.url))
-    end)
+    results =
+      Enum.map(mangas, fn m ->
+        new_attrs = parse_manga(m.url)
+        update_manga(m, new_attrs)
+      end)
 
     Logger.info("finished updating mangas")
+
+    results
   end
 
   @doc """

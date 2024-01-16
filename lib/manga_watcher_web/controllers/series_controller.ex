@@ -2,6 +2,8 @@ defmodule MangaWatcherWeb.SeriesController do
   alias MangaWatcher.Series
   use MangaWatcherWeb, :controller
 
+  require Logger
+
   def home(conn, _params) do
     mangas = Series.list_mangas()
 
@@ -11,11 +13,27 @@ defmodule MangaWatcherWeb.SeriesController do
   end
 
   def new(conn, _params) do
-    manga = %Series.Manga{}
+    manga = %Series.Manga{} |> Series.Manga.create_changeset(%{})
 
     conn
     |> assign(:manga, manga)
     |> render(:new)
+  end
+
+  def create(conn, params) do
+    case Series.create_manga(params["manga"]) do
+      {:ok, manga} ->
+        conn
+        |> put_flash(:info, "Successfully created #{manga.name}")
+        |> redirect(to: ~p"/")
+
+      {:error, manga} ->
+        Logger.error("could not save manga: #{inspect(manga.errors)}")
+
+        conn
+        |> assign(:manga, manga)
+        |> render(:new)
+    end
   end
 
   def read(conn, params) do
@@ -30,9 +48,11 @@ defmodule MangaWatcherWeb.SeriesController do
   end
 
   def update_all(conn, _params) do
-    spawn(fn -> Series.refresh_all_manga() end)
+    Series.refresh_all_manga()
+    mangas = Series.list_mangas()
 
     conn
-    |> render(:processing_button)
+    |> assign(:mangas, mangas)
+    |> render(:home)
   end
 end
