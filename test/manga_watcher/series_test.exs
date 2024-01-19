@@ -36,7 +36,13 @@ defmodule MangaWatcher.SeriesTest do
 
     test "update_manga/2 with valid data updates the manga" do
       manga = manga_fixture()
-      update_attrs = %{last_chapter: 43, last_read_chapter: 43, name: "some updated name", url: "some updated url"}
+
+      update_attrs = %{
+        last_chapter: 43,
+        last_read_chapter: 43,
+        name: "some updated name",
+        url: "some updated url"
+      }
 
       assert {:ok, %Manga{} = manga} = Series.update_manga(manga, update_attrs)
       assert manga.last_chapter == 43

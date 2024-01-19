@@ -3,11 +3,3 @@
 @import "tailwindcss/utilities";
 
 /* This file is for your main application CSS */
-
-#spinner {
-  display: none;
-}
-
-#spinner.htmx-request {
-  display: inline-block;
-}

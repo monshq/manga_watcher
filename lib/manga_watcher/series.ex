@@ -20,7 +20,10 @@ defmodule MangaWatcher.Series do
 
   """
   def list_mangas do
-    Manga |> order_by(desc: fragment("last_chapter - last_read_chapter")) |> Repo.all()
+    Manga
+    |> order_by(desc: fragment("last_chapter - last_read_chapter"))
+    |> order_by(desc: :updated_at)
+    |> Repo.all()
   end
 
   @doc """
@@ -80,17 +83,14 @@ defmodule MangaWatcher.Series do
 
   def refresh_all_manga() do
     Logger.info("starting update of all mangas")
-    mangas = list_mangas()
 
-    results =
-      Enum.map(mangas, fn m ->
-        new_attrs = parse_manga(m.url)
-        update_manga(m, new_attrs)
-      end)
+    Enum.each(list_mangas(), fn m ->
+      new_attrs = parse_manga(m.url)
+      {:ok, manga} = update_manga(m, new_attrs)
+      manga
+    end)
 
     Logger.info("finished updating mangas")
-
-    results
   end
 
   @doc """
