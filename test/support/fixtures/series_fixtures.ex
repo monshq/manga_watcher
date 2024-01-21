@@ -11,10 +11,7 @@ defmodule MangaWatcher.SeriesFixtures do
     {:ok, manga} =
       attrs
       |> Enum.into(%{
-        last_chapter: 42,
-        last_read_chapter: 42,
-        name: "some name",
-        url: "some url"
+        url: "asdf.com/qwerty"
       })
       |> MangaWatcher.Series.create_manga()
 

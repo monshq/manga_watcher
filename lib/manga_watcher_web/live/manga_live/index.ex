@@ -1,5 +1,4 @@
 defmodule MangaWatcherWeb.MangaLive.Index do
-  alias MangaWatcherWeb.SeriesController
   alias Phoenix.LiveView.AsyncResult
   use MangaWatcherWeb, :live_view
 
@@ -59,10 +58,6 @@ defmodule MangaWatcherWeb.MangaLive.Index do
     assigns =
       socket
       |> start_async(:refresh_all_manga, fn ->
-        # m = Series.get_manga!(1)
-        # Series.update_manga(m, %{last_chapter: m.last_chapter + 2})
-        # Process.sleep(500)
-        # Series.list_mangas()
         Series.refresh_all_manga()
         Series.list_mangas()
       end)

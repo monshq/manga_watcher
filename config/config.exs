@@ -7,6 +7,8 @@
 # General application configuration
 import Config
 
+config :manga_watcher, :page_downloader, MangaWatcher.Manga.Downloader
+
 config :manga_watcher,
   ecto_repos: [MangaWatcher.Repo]
 

@@ -4,11 +4,14 @@ defmodule MangaWatcher.Series do
   """
 
   import Ecto.Query, warn: false
+  alias MangaWatcher.Manga.PageParser
   alias MangaWatcher.Repo
 
   alias MangaWatcher.Series.Manga
 
   require Logger
+
+  @downloader Application.compile_env(:manga_watcher, :page_downloader)
 
   @doc """
   Returns the list of mangas.
@@ -55,11 +58,11 @@ defmodule MangaWatcher.Series do
 
   """
   def create_manga(attrs \\ %{}) do
-    manga_attrs = parse_manga(attrs["url"])
-    manga_attrs = Map.put(manga_attrs, :last_read_chapter, manga_attrs.last_chapter)
+    parsed_attrs = parse_attrs(attrs)
+    parsed_attrs = Map.put(parsed_attrs, :last_read_chapter, parsed_attrs.last_chapter)
 
     %Manga{}
-    |> Manga.create_changeset(manga_attrs)
+    |> Manga.create_changeset(parsed_attrs)
     |> Repo.insert()
   end
 
@@ -84,9 +87,9 @@ defmodule MangaWatcher.Series do
   def refresh_all_manga() do
     Logger.info("starting update of all mangas")
 
-    Enum.each(list_mangas(), fn m ->
-      new_attrs = parse_manga(m.url)
-      {:ok, manga} = update_manga(m, new_attrs)
+    Enum.each(list_mangas(), fn manga ->
+      parsed_attrs = parse_attrs(manga)
+      {:ok, manga} = update_manga(manga, parsed_attrs)
       manga
     end)
 
@@ -122,42 +125,16 @@ defmodule MangaWatcher.Series do
     Manga.update_changeset(manga, attrs)
   end
 
-  def parse_manga(url) do
-    tesla_client =
-      Tesla.client([
-        Tesla.Middleware.FollowRedirects
-        # Tesla.Middleware.Logger
-      ])
-
-    {:ok, request} = Tesla.get(tesla_client, url)
-    html = request.body
-    {:ok, doc} = Floki.parse_document(html)
-
-    name =
-      Enum.find_value([".main-head h1", "h1.entry-title"], fn el ->
-        Floki.find(doc, el) |> Floki.text() |> wrap_empty()
-      end)
-
-    links =
-      Enum.find_value([".chapter-list a", "#chapterlist a"], [], fn el ->
-        Floki.attribute(doc, el, "href") |> wrap_empty()
-      end)
-
-    last_chapter =
-      Enum.map(links, fn l ->
-        Regex.scan(~r/chapter-(\d*)/, l) |> hd() |> List.last() |> String.to_integer()
-      end)
-      |> Enum.max()
-
-    Logger.info("successfully got info of manga #{url}")
-    %{name: name, url: request.url, last_chapter: last_chapter}
-  rescue
-    e ->
-      Logger.error("could not update manga #{url}: #{inspect(e)}")
-      %{}
+  def parse_attrs(manga_attrs) when is_binary(manga_attrs.url) do
+    with {:ok, html_content} <- @downloader.download(manga_attrs.url),
+         {:ok, attrs} <- PageParser.parse(html_content) do
+      Map.merge(manga_attrs, attrs)
+    else
+      {:error, reason} ->
+        Logger.error("could not parse manga #{manga_attrs.url}: #{inspect(reason)}")
+        manga_attrs
+    end
   end
 
-  defp wrap_empty(val) when val == "", do: false
-  defp wrap_empty(val) when val == [], do: false
-  defp wrap_empty(val), do: val
+  def parse_attrs(manga_attrs), do: manga_attrs
 end

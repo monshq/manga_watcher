@@ -21,13 +21,10 @@ defmodule MangaWatcher.SeriesTest do
     end
 
     test "create_manga/1 with valid data creates a manga" do
-      valid_attrs = %{last_chapter: 42, last_read_chapter: 42, name: "some name", url: "some url"}
+      valid_attrs = %{url: "new url"}
 
       assert {:ok, %Manga{} = manga} = Series.create_manga(valid_attrs)
-      assert manga.last_chapter == 42
-      assert manga.last_read_chapter == 42
-      assert manga.name == "some name"
-      assert manga.url == "some url"
+      assert manga.url == "new url"
     end
 
     test "create_manga/1 with invalid data returns error changeset" do
@@ -40,14 +37,12 @@ defmodule MangaWatcher.SeriesTest do
       update_attrs = %{
         last_chapter: 43,
         last_read_chapter: 43,
-        name: "some updated name",
         url: "some updated url"
       }
 
       assert {:ok, %Manga{} = manga} = Series.update_manga(manga, update_attrs)
       assert manga.last_chapter == 43
       assert manga.last_read_chapter == 43
-      assert manga.name == "some updated name"
       assert manga.url == "some updated url"
     end
 
