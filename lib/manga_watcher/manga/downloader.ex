@@ -9,7 +9,11 @@ defmodule MangaWatcher.Manga.Downloader do
 
     case Tesla.get(tesla_client, url) do
       {:ok, request} ->
-        {:ok, request.body}
+        if Integer.to_string(request.status) =~ ~r/2\d\d/ do
+          {:ok, request.body}
+        else
+          {:error, "wrong response code: #{request.status}"}
+        end
 
       error ->
         error
