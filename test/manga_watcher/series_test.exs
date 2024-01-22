@@ -62,5 +62,11 @@ defmodule MangaWatcher.SeriesTest do
       manga = manga_fixture()
       assert %Ecto.Changeset{} = Series.change_manga(manga)
     end
+
+    test "refresh_all_manga/0 doesn't throw errors" do
+      manga = manga_fixture()
+      assert :ok = Series.refresh_all_manga()
+      assert [manga] == Series.list_mangas()
+    end
   end
 end

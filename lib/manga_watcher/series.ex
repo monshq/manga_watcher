@@ -88,9 +88,8 @@ defmodule MangaWatcher.Series do
     Logger.info("starting update of all mangas")
 
     Enum.each(list_mangas(), fn manga ->
-      parsed_attrs = parse_attrs(manga)
-      {:ok, manga} = update_manga(manga, parsed_attrs)
-      manga
+      parsed_attrs = manga |> Map.from_struct() |> parse_attrs()
+      {:ok, _} = update_manga(manga, parsed_attrs)
     end)
 
     Logger.info("finished updating mangas")
