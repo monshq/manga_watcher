@@ -1,18 +1,13 @@
-# MangaWatcher
+# Manga Watcher
 
-To start your Phoenix server:
+Simple app to track what mangas you read and what chapter you stopped at.
 
-  * Run `mix setup` to install and setup dependencies
-  * Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+- save mangas that you read into the app
+- let app poll for updates
+- see the list of mangas with new chapters you didn't read yet
+- mark new chapters as read
+- repeat
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+## Caveats
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
-
-## Learn more
-
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+- only a couple of supported sites that I'm personally using
