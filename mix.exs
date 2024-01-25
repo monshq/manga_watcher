@@ -5,11 +5,16 @@ defmodule MangaWatcher.MixProject do
     [
       app: :manga_watcher,
       version: "0.1.0",
-      elixir: "~> 1.14",
+      elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      releases: [
+        manga_watcher: [
+          include_executables_for: [:unix]
+        ]
+      ]
     ]
   end
 
@@ -44,6 +49,7 @@ defmodule MangaWatcher.MixProject do
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
       {:swoosh, "~> 1.3"},
+      {:hackney, "~> 1.9"},
       {:finch, "~> 0.13"},
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
@@ -51,8 +57,8 @@ defmodule MangaWatcher.MixProject do
       {:jason, "~> 1.2"},
       {:tesla, "~> 1.4"},
       {:plug_cowboy, "~> 2.5"},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:ex_check, "~> 0.14.0", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7", only: ~w(dev test)a, runtime: false},
+      {:ex_check, "~> 0.14.0", only: ~w(dev test)a, runtime: false}
     ]
   end
 
