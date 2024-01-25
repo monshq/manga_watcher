@@ -22,6 +22,8 @@ config :manga_watcher, MangaWatcherWeb.Endpoint,
   pubsub_server: MangaWatcher.PubSub,
   live_view: [signing_salt: "1son+TQs"]
 
+config :manga_watcher, :basic_auth, enabled: false
+
 # Configures the mailer
 #
 # By default it uses the "Local" adapter which stores the emails

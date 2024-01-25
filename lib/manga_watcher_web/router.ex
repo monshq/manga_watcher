@@ -8,6 +8,10 @@ defmodule MangaWatcherWeb.Router do
     plug :put_root_layout, html: {MangaWatcherWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+
+    if Application.compile_env(:manga_watcher, :basic_auth)[:enabled] do
+      plug :auth, Application.compile_env(:manga_watcher, :basic_auth)
+    end
   end
 
   pipeline :api do
@@ -49,5 +53,9 @@ defmodule MangaWatcherWeb.Router do
 
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
+  end
+
+  def auth(conn, opts) do
+    Plug.BasicAuth.basic_auth(conn, opts)
   end
 end
