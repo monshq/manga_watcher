@@ -14,3 +14,7 @@ start:
 	echo 'ok'
 
 release: build upload unpack start
+
+release-local:
+	MIX_ENV=prod mix do assets.deploy, release --overwrite
+	cp -r _build/prod/rel/manga_watcher/* /srv/projects/manga_watcher/
