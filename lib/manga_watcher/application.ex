@@ -20,9 +20,10 @@ defmodule MangaWatcher.Application do
       # Start Finch
       {Finch, name: MangaWatcher.Finch},
       # Start the Endpoint (http/https)
-      MangaWatcherWeb.Endpoint
+      MangaWatcherWeb.Endpoint,
       # Start a worker by calling: MangaWatcher.Worker.start_link(arg)
       # {MangaWatcher.Worker, arg}
+      MangaWatcher.Manga.UpdatePoller
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
