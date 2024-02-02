@@ -9,6 +9,7 @@ defmodule MangaWatcher.Series.Manga do
     field :last_read_chapter, :integer
     field :name, :string
     field :url, :string
+    field :failed_updates, :integer, default: 0
 
     timestamps()
   end
@@ -41,7 +42,7 @@ defmodule MangaWatcher.Series.Manga do
   @doc false
   def update_changeset(manga, attrs) do
     manga
-    |> cast(attrs, [:name, :url, :last_read_chapter, :last_chapter])
+    |> cast(attrs, [:name, :url, :last_read_chapter, :last_chapter, :failed_updates])
     |> validate_required([:name, :url, :last_read_chapter, :last_chapter])
     |> validate_format(:url, @url_format)
     |> normalize_url()

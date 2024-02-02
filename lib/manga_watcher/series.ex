@@ -66,7 +66,7 @@ defmodule MangaWatcher.Series do
     cs = Manga.pre_create_changeset(attrs)
 
     if cs.valid? do
-      parsed_attrs = attrs |> Utils.atomize_keys() |> parse_attrs()
+      {:ok, parsed_attrs} = attrs |> Utils.atomize_keys() |> parse_attrs()
       parsed_attrs = Map.put(parsed_attrs, :last_read_chapter, parsed_attrs.last_chapter)
 
       Manga.create_changeset(parsed_attrs)
@@ -98,8 +98,14 @@ defmodule MangaWatcher.Series do
     Logger.info("starting update of all mangas")
 
     Enum.each(list_mangas(), fn manga ->
-      parsed_attrs = manga |> Map.from_struct() |> parse_attrs()
-      {:ok, _} = update_manga(manga, parsed_attrs)
+      case manga |> Map.from_struct() |> parse_attrs() do
+        {:ok, parsed_attrs} ->
+          {:ok, _} = update_manga(manga, Map.merge(parsed_attrs, %{failed_updates: 0}))
+
+        {:error, reason} ->
+          Logger.error("could not update manga #{manga.name}: #{reason}")
+          {:ok, _} = update_manga(manga, %{failed_updates: manga.failed_updates + 1})
+      end
     end)
 
     Logger.info("finished updating mangas")
@@ -137,14 +143,12 @@ defmodule MangaWatcher.Series do
   def parse_attrs(manga_attrs) when is_binary(manga_attrs.url) do
     with {:ok, html_content} <- @downloader.download(manga_attrs.url),
          {:ok, attrs} <- PageParser.parse(html_content) do
-      Logger.info("successfully parsed manga #{manga_attrs.url}: #{inspect(attrs)}")
-      Map.merge(manga_attrs, attrs)
+      {:ok, Map.merge(manga_attrs, attrs)}
     else
       {:error, reason} ->
-        Logger.error("could not parse manga #{manga_attrs.url}: #{inspect(reason)}")
-        manga_attrs
+        {:error, reason}
     end
   end
 
-  def parse_attrs(manga_attrs), do: manga_attrs
+  def parse_attrs(_manga_attrs), do: {:error, "url is missing"}
 end

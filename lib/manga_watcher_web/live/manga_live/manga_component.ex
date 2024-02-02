@@ -20,14 +20,20 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
 
   def manga_chapters(assigns) do
     ~H"""
-    <%= if @manga.last_chapter == @manga.last_read_chapter do %>
-      <span class="text-gray-400 dark:text-gray-500">
+    <%= if @manga.failed_updates > 5 do %>
+      <span class="text-red-500 dark:text-red-500 font-bold">
         <%= @manga.last_read_chapter %> / <%= @manga.last_chapter %>
       </span>
     <% else %>
-      <span class="text-green-600 dark:text-green-300 font-bold">
-        <%= @manga.last_read_chapter %> / <%= @manga.last_chapter %>
-      </span>
+      <%= if @manga.last_chapter == @manga.last_read_chapter do %>
+        <span class="text-gray-400 dark:text-gray-500">
+          <%= @manga.last_read_chapter %> / <%= @manga.last_chapter %>
+        </span>
+      <% else %>
+        <span class="text-green-600 dark:text-green-300 font-bold">
+          <%= @manga.last_read_chapter %> / <%= @manga.last_chapter %>
+        </span>
+      <% end %>
     <% end %>
     """
   end
