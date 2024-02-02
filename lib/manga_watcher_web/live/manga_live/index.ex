@@ -42,7 +42,7 @@ defmodule MangaWatcherWeb.MangaLive.Index do
 
   @impl true
   def handle_info({MangaWatcherWeb.MangaLive.FormComponent, {:saved, manga}}, socket) do
-    {:noreply, stream_insert(socket, :mangas, manga)}
+    {:noreply, assign(socket, :mangas, [manga | socket.assigns.mangas])}
   end
 
   @impl true
@@ -50,7 +50,12 @@ defmodule MangaWatcherWeb.MangaLive.Index do
     manga = Series.get_manga!(id)
     {:ok, _} = Series.delete_manga(manga)
 
-    {:noreply, stream_delete(socket, :mangas, manga)}
+    socket =
+      socket
+      |> assign(:mangas, Series.list_mangas())
+      |> push_patch(to: ~p/\//)
+
+    {:noreply, socket}
   end
 
   @impl true

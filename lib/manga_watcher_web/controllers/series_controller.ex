@@ -14,7 +14,7 @@ defmodule MangaWatcherWeb.SeriesController do
   end
 
   def new(conn, _params) do
-    manga = %Series.Manga{} |> Series.Manga.create_changeset(%{})
+    manga = Series.Manga.create_changeset(%{})
 
     conn
     |> assign(:manga, manga)

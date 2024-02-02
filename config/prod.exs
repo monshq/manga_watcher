@@ -20,4 +20,6 @@ config :logger, level: :info
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
 
+config :manga_watcher, MangaWatcher.Manga.UpdatePoller, enabled: true
+
 import_config("secrets.exs")

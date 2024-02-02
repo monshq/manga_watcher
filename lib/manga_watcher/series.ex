@@ -8,6 +8,7 @@ defmodule MangaWatcher.Series do
   alias MangaWatcher.Repo
 
   alias MangaWatcher.Series.Manga
+  alias MangaWatcher.Utils
 
   require Logger
 
@@ -45,6 +46,10 @@ defmodule MangaWatcher.Series do
   """
   def get_manga!(id), do: Repo.get!(Manga, id)
 
+  def validate_new_manga(attrs \\ %{}) do
+    Manga.pre_create_changeset(attrs)
+  end
+
   @doc """
   Creates a manga.
 
@@ -58,12 +63,17 @@ defmodule MangaWatcher.Series do
 
   """
   def create_manga(attrs \\ %{}) do
-    parsed_attrs = parse_attrs(attrs)
-    parsed_attrs = Map.put(parsed_attrs, :last_read_chapter, parsed_attrs.last_chapter)
+    cs = Manga.pre_create_changeset(attrs)
 
-    %Manga{}
-    |> Manga.create_changeset(parsed_attrs)
-    |> Repo.insert()
+    if cs.valid? do
+      parsed_attrs = attrs |> Utils.atomize_keys() |> parse_attrs()
+      parsed_attrs = Map.put(parsed_attrs, :last_read_chapter, parsed_attrs.last_chapter)
+
+      Manga.create_changeset(parsed_attrs)
+      |> Repo.insert()
+    else
+      Repo.insert(cs)
+    end
   end
 
   @doc """
@@ -127,6 +137,7 @@ defmodule MangaWatcher.Series do
   def parse_attrs(manga_attrs) when is_binary(manga_attrs.url) do
     with {:ok, html_content} <- @downloader.download(manga_attrs.url),
          {:ok, attrs} <- PageParser.parse(html_content) do
+      Logger.info("successfully parsed manga #{manga_attrs.url}: #{inspect(attrs)}")
       Map.merge(manga_attrs, attrs)
     else
       {:error, reason} ->

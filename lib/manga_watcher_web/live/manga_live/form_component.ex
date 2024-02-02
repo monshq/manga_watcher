@@ -15,11 +15,26 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
         for={@form}
         id="manga-form"
         phx-target={@myself}
-        phx-change="validate"
+        phx-change={if @action == :edit, do: "validate_change", else: "validate_create"}
         phx-submit="save"
       >
+        <.input field={@form[:url]} label="Url" />
+        <%= if @action == :edit do %>
+          <.input field={@form[:name]} label="Name" />
+          <.input field={@form[:last_read_chapter]} label="Last read chapter" />
+        <% end %>
         <:actions>
           <.button phx-disable-with="Saving...">Save Manga</.button>
+          <%= if @action == :edit do %>
+            <.button
+              type="button"
+              data-confirm="Are you sure?"
+              phx-click="delete"
+              phx-value-id={@manga.id}
+            >
+              Delete manga
+            </.button>
+          <% end %>
         </:actions>
       </.simple_form>
     </div>
@@ -37,10 +52,19 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
   end
 
   @impl true
-  def handle_event("validate", %{"manga" => manga_params}, socket) do
+  def handle_event("validate_change", %{"manga" => manga_params}, socket) do
     changeset =
       socket.assigns.manga
       |> Series.change_manga(manga_params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign_form(socket, changeset)}
+  end
+
+  @impl true
+  def handle_event("validate_create", %{"manga" => manga_params}, socket) do
+    changeset =
+      Series.validate_new_manga(manga_params)
       |> Map.put(:action, :validate)
 
     {:noreply, assign_form(socket, changeset)}

@@ -24,6 +24,8 @@ config :manga_watcher, MangaWatcherWeb.Endpoint,
 
 config :manga_watcher, :basic_auth, enabled: false
 
+config :manga_watcher, MangaWatcher.Manga.UpdatePoller, enabled: false
+
 # Configures the mailer
 #
 # By default it uses the "Local" adapter which stores the emails
