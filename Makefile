@@ -18,6 +18,11 @@ release: build upload unpack start
 
 release-local:
 	MIX_ENV=prod mix do assets.deploy, release --overwrite
-	cp -r _build/prod/rel/manga_watcher/* /srv/projects/manga_watcher/
-	init-exporter -p Procfile manga_watcher
+	sudo systemctl stop apps-manga_watcher
+	rm -rf /srv/projects/manga_watcher/prev
+	mv -f /srv/projects/manga_watcher/current /srv/projects/manga_watcher/prev
+	mkdir -p /srv/projects/manga_watcher/current
+	cp -r _build/prod/rel/manga_watcher/* /srv/projects/manga_watcher/current
+	ln -sn /var/log/projects/manga_watcher /srv/projects/manga_watcher/current/log
+	sudo init-exporter -p Procfile manga_watcher
 	sudo systemctl restart apps-manga_watcher
