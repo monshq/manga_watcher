@@ -35,7 +35,7 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <tr class="bg-white dark:bg-gray-800">
+    <tr id={"mangas-#{@id}"} class="bg-white dark:bg-gray-800">
       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-gray-200">
         <.link href={@manga.url}><%= @manga.name %></.link>
         <dl class="md:hidden">

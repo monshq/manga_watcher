@@ -53,20 +53,23 @@ defmodule MangaWatcher.Series.Manga do
     url = changeset |> get_field(:url)
 
     if url do
-      uri = URI.parse(url |> String.trim_trailing("/"))
-
-      cond do
-        is_binary(uri.scheme) ->
-          cast(changeset, %{url: uri.scheme <> "://" <> uri.host <> uri.path}, [:url])
-
-        is_binary(uri.host) ->
-          cast(changeset, %{url: uri.host <> uri.path}, [:url])
-
-        true ->
-          changeset
-      end
+      cast(changeset, %{url: normalized_url(url)}, [:url])
     else
       changeset
     end
   end
+
+  defp normalized_url(url) do
+    uri = URI.parse(url |> String.trim_trailing("/"))
+    host_and_path = wrap(uri.host) <> wrap(uri.path)
+
+    if is_binary(uri.scheme) do
+      uri.scheme <> "://" <> host_and_path
+    else
+      host_and_path
+    end
+  end
+
+  defp wrap(b) when is_binary(b), do: b
+  defp wrap(_), do: ""
 end

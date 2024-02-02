@@ -41,8 +41,8 @@ defmodule MangaWatcherWeb.MangaLive.Index do
   end
 
   @impl true
-  def handle_info({MangaWatcherWeb.MangaLive.FormComponent, {:saved, manga}}, socket) do
-    {:noreply, assign(socket, :mangas, [manga | socket.assigns.mangas])}
+  def handle_info({MangaWatcherWeb.MangaLive.FormComponent, {:saved, _manga}}, socket) do
+    {:noreply, assign(socket, :mangas, Series.list_mangas())}
   end
 
   @impl true
