@@ -19,6 +19,7 @@ defmodule MangaWatcher.Manga.PageParser do
       |> Stream.reject(&Enum.empty?/1)
       |> Stream.map(&hd/1)
       |> Stream.map(&List.last/1)
+      |> Stream.reject(&(&1 == ""))
       |> Stream.map(&String.to_integer/1)
       |> Enum.max()
 

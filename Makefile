@@ -1,4 +1,7 @@
 
+add-test-page:
+	curl -sLo test/support/fixtures/website_pages/$(NAME).html $(URL)
+
 build:
 	docker build --output type=tar,dest=release.tar .
 	gzip -f release.tar
