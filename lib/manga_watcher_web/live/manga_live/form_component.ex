@@ -2,6 +2,7 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
   use MangaWatcherWeb, :live_component
 
   alias MangaWatcher.Series
+  alias MangaWatcher.Utils
 
   @impl true
   def render(assigns) do
@@ -19,6 +20,7 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
         phx-submit="save"
       >
         <.input field={@form[:url]} label="Url" />
+        <.input field={@form[:tags]} label="Tags" value={render_tags(@form)} />
         <%= if @action == :edit do %>
           <.input field={@form[:name]} label="Name" />
           <.input field={@form[:last_read_chapter]} label="Last read chapter" />
@@ -39,6 +41,30 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
       </.simple_form>
     </div>
     """
+  end
+
+  defp render_tags(form) do
+    case form[:tags].value do
+      [%Ecto.Changeset{} | _] = v ->
+        v
+        |> Enum.map_join(", ", & &1.data.name)
+
+      [%MangaWatcher.Series.Tag{} | _] = v ->
+        v
+        |> Enum.map_join(", ", & &1.name)
+
+      v when is_binary(v) ->
+        v
+
+      [] ->
+        []
+
+      %Ecto.Association.NotLoaded{} ->
+        ""
+
+      v ->
+        raise "unexpected value: #{inspect(v)}"
+    end
   end
 
   @impl true
@@ -90,7 +116,9 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
   end
 
   defp save_manga(socket, :new, manga_params) do
-    case Series.create_manga(manga_params) do
+    params = Utils.atomize_keys(manga_params)
+
+    case Series.create_manga(params) do
       {:ok, manga} ->
         notify_parent({:saved, manga})
 

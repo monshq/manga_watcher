@@ -1,6 +1,5 @@
 defmodule MangaWatcherWeb.SeriesController do
   alias MangaWatcher.Series
-  alias MangaWatcher.Utils
   use MangaWatcherWeb, :controller
 
   require Logger
@@ -22,7 +21,7 @@ defmodule MangaWatcherWeb.SeriesController do
   end
 
   def create(conn, params) do
-    case Series.create_manga(Utils.atomize_keys(params["manga"])) do
+    case Series.create_manga(params["manga"]) do
       {:ok, manga} ->
         conn
         |> put_flash(:info, "Successfully created #{manga.name}")

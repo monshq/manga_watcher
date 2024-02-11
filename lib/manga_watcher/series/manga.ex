@@ -3,6 +3,9 @@ defmodule MangaWatcher.Series.Manga do
   import Ecto.Changeset
 
   alias MangaWatcher.Repo
+  alias MangaWatcher.Series.Tag
+
+  import Ecto.Query
 
   schema "mangas" do
     field :last_chapter, :integer
@@ -10,6 +13,8 @@ defmodule MangaWatcher.Series.Manga do
     field :name, :string
     field :url, :string
     field :failed_updates, :integer, default: 0
+
+    many_to_many :tags, Tag, join_through: "manga_tags", on_replace: :delete
 
     timestamps()
   end
@@ -30,17 +35,14 @@ defmodule MangaWatcher.Series.Manga do
 
   @doc false
   def create_changeset(attrs) do
-    %__MODULE__{}
+    pre_create_changeset(attrs)
     |> cast(attrs, [:name, :url, :last_read_chapter, :last_chapter])
-    |> validate_required([:name, :url, :last_read_chapter, :last_chapter])
-    |> validate_format(:url, @url_format)
-    |> normalize_url()
-    |> validate_format(:url, ~r/\d*/)
     |> unique_constraint(:url)
+    |> put_assoc(:tags, parse_tags(attrs))
   end
 
   @doc false
-  def update_changeset(manga, attrs) do
+  def pre_update_changeset(manga, attrs) do
     manga
     |> cast(attrs, [:name, :url, :last_read_chapter, :last_chapter, :failed_updates])
     |> validate_required([:name, :url, :last_read_chapter, :last_chapter])
@@ -48,6 +50,13 @@ defmodule MangaWatcher.Series.Manga do
     |> normalize_url()
     |> unsafe_validate_unique(:url, Repo)
     |> unique_constraint(:url)
+  end
+
+  @doc false
+  def update_changeset(manga, attrs) do
+    manga
+    |> pre_update_changeset(attrs)
+    |> put_assoc(:tags, parse_tags(attrs))
   end
 
   defp normalize_url(changeset) do
@@ -73,4 +82,43 @@ defmodule MangaWatcher.Series.Manga do
 
   defp wrap(b) when is_binary(b), do: b
   defp wrap(_), do: ""
+
+  defp parse_tags(params) do
+    (params["tags"] || "")
+    |> String.split(",")
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+    |> insert_and_get_all_tags()
+  end
+
+  defp insert_and_get_all_tags([]) do
+    []
+  end
+
+  defp insert_and_get_all_tags(names) do
+    timestamp =
+      NaiveDateTime.utc_now()
+      |> NaiveDateTime.truncate(:second)
+
+    placeholders = %{timestamp: timestamp}
+
+    maps =
+      Enum.map(
+        names,
+        &%{
+          name: &1,
+          inserted_at: {:placeholder, :timestamp},
+          updated_at: {:placeholder, :timestamp}
+        }
+      )
+
+    Repo.insert_all(
+      Tag,
+      maps,
+      placeholders: placeholders,
+      on_conflict: :nothing
+    )
+
+    Repo.all(from t in Tag, where: t.name in ^names)
+  end
 end

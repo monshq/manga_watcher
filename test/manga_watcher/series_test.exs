@@ -12,7 +12,7 @@ defmodule MangaWatcher.SeriesTest do
 
     test "list_mangas/0 returns all mangas" do
       manga = manga_fixture()
-      assert Series.list_mangas() == [manga]
+      assert Series.list_mangas() == [Ecto.reset_fields(manga, [:tags])]
     end
 
     test "get_manga!/1 returns the manga with given id" do
@@ -66,7 +66,7 @@ defmodule MangaWatcher.SeriesTest do
     test "refresh_all_manga/0 doesn't throw errors" do
       manga = manga_fixture()
       assert :ok = Series.refresh_all_manga()
-      assert [manga] == Series.list_mangas()
+      assert [Ecto.reset_fields(manga, [:tags])] == Series.list_mangas()
     end
   end
 end

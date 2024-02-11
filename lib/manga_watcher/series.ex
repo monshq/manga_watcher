@@ -4,11 +4,10 @@ defmodule MangaWatcher.Series do
   """
 
   import Ecto.Query, warn: false
-  alias MangaWatcher.Manga.Updater
-  alias MangaWatcher.Repo
 
+  alias MangaWatcher.Manga.Updater
   alias MangaWatcher.Series.Manga
-  alias MangaWatcher.Utils
+  alias MangaWatcher.Repo
 
   require Logger
 
@@ -21,7 +20,7 @@ defmodule MangaWatcher.Series do
       [%Manga{}, ...]
 
   """
-  def list_mangas do
+  def list_mangas() do
     Manga
     |> order_by(desc: fragment("last_chapter - last_read_chapter"))
     |> order_by(desc: :updated_at)
@@ -42,7 +41,11 @@ defmodule MangaWatcher.Series do
       ** (Ecto.NoResultsError)
 
   """
-  def get_manga!(id), do: Repo.get!(Manga, id)
+  def get_manga!(id) do
+    Manga
+    |> preload(:tags)
+    |> Repo.get!(id)
+  end
 
   def validate_new_manga(attrs \\ %{}) do
     Manga.pre_create_changeset(attrs)
@@ -64,7 +67,7 @@ defmodule MangaWatcher.Series do
     cs = Manga.pre_create_changeset(attrs)
 
     if cs.valid? do
-      {:ok, parsed_attrs} = attrs |> Utils.atomize_keys() |> Updater.parse_attrs()
+      {:ok, parsed_attrs} = attrs |> Updater.parse_attrs()
       parsed_attrs = Map.put(parsed_attrs, :last_read_chapter, parsed_attrs.last_chapter)
 
       Manga.create_changeset(parsed_attrs)
@@ -93,7 +96,7 @@ defmodule MangaWatcher.Series do
   end
 
   def refresh_all_manga() do
-    list_mangas() |> Updater.batch_update()
+    list_mangas() |> Repo.preload(:tags) |> Updater.batch_update()
   end
 
   @doc """
@@ -122,6 +125,6 @@ defmodule MangaWatcher.Series do
 
   """
   def change_manga(%Manga{} = manga, attrs \\ %{}) do
-    Manga.update_changeset(manga, attrs)
+    Manga.pre_update_changeset(manga, attrs)
   end
 end

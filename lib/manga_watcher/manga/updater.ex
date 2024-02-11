@@ -43,15 +43,17 @@ defmodule MangaWatcher.Manga.Updater do
     end
   end
 
-  def parse_attrs(manga_attrs) when is_binary(manga_attrs.url) do
-    with {:ok, html_content} <- @downloader.download(manga_attrs.url),
+  def parse_attrs(manga_attrs) do
+    with {:ok, url} <- Map.fetch(manga_attrs, :url),
+         {:ok, html_content} <- @downloader.download(url),
          {:ok, attrs} <- PageParser.parse(html_content) do
       {:ok, Map.merge(manga_attrs, attrs)}
     else
+      :error ->
+        {:error, "url is missing"}
+
       {:error, reason} ->
         {:error, reason}
     end
   end
-
-  def parse_attrs(_manga_attrs), do: {:error, "url is missing"}
 end
