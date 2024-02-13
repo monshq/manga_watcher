@@ -4,15 +4,13 @@ defmodule MangaWatcher.Series do
   """
 
   import Ecto.Query, warn: false
-  alias MangaWatcher.Manga.PageParser
+  alias MangaWatcher.Manga.Updater
   alias MangaWatcher.Repo
 
   alias MangaWatcher.Series.Manga
   alias MangaWatcher.Utils
 
   require Logger
-
-  @downloader Application.compile_env(:manga_watcher, :page_downloader)
 
   @doc """
   Returns the list of mangas.
@@ -66,7 +64,7 @@ defmodule MangaWatcher.Series do
     cs = Manga.pre_create_changeset(attrs)
 
     if cs.valid? do
-      {:ok, parsed_attrs} = attrs |> Utils.atomize_keys() |> parse_attrs()
+      {:ok, parsed_attrs} = attrs |> Utils.atomize_keys() |> Updater.parse_attrs()
       parsed_attrs = Map.put(parsed_attrs, :last_read_chapter, parsed_attrs.last_chapter)
 
       Manga.create_changeset(parsed_attrs)
@@ -95,20 +93,7 @@ defmodule MangaWatcher.Series do
   end
 
   def refresh_all_manga() do
-    Logger.info("starting update of all mangas")
-
-    Enum.each(list_mangas(), fn manga ->
-      case manga |> Map.from_struct() |> parse_attrs() do
-        {:ok, parsed_attrs} ->
-          {:ok, _} = update_manga(manga, Map.merge(parsed_attrs, %{failed_updates: 0}))
-
-        {:error, reason} ->
-          Logger.error("could not update manga #{manga.name}: #{reason}")
-          {:ok, _} = update_manga(manga, %{failed_updates: manga.failed_updates + 1})
-      end
-    end)
-
-    Logger.info("finished updating mangas")
+    list_mangas() |> Updater.batch_update()
   end
 
   @doc """
@@ -139,16 +124,4 @@ defmodule MangaWatcher.Series do
   def change_manga(%Manga{} = manga, attrs \\ %{}) do
     Manga.update_changeset(manga, attrs)
   end
-
-  def parse_attrs(manga_attrs) when is_binary(manga_attrs.url) do
-    with {:ok, html_content} <- @downloader.download(manga_attrs.url),
-         {:ok, attrs} <- PageParser.parse(html_content) do
-      {:ok, Map.merge(manga_attrs, attrs)}
-    else
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  def parse_attrs(_manga_attrs), do: {:error, "url is missing"}
 end
