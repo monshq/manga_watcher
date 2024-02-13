@@ -33,3 +33,4 @@ config :logger, level: :warning
 config :phoenix, :plug_init_mode, :runtime
 
 config :manga_watcher, :page_downloader, MangaWatcher.Fake.Downloader
+config :manga_watcher, :same_host_interval, 5

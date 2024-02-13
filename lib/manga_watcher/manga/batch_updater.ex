@@ -5,13 +5,27 @@ defmodule MangaWatcher.Manga.Updater do
   require Logger
 
   @downloader Application.compile_env(:manga_watcher, :page_downloader)
+  @same_host_interval Application.compile_env(:manga_watcher, :same_host_interval)
 
   def batch_update(mangas) do
     Logger.info("starting update of all mangas")
 
-    Enum.each(mangas, &update/1)
+    mangas
+    |> Enum.group_by(&URI.parse(&1.url).host)
+    |> Task.async_stream(__MODULE__, :update_group, [], ordered: false, timeout: 180_000)
+    |> Stream.run()
 
     Logger.info("finished updating mangas")
+  end
+
+  def update_group({host, mangas}) do
+    Logger.info("found #{length(mangas)} mangas for host #{host}")
+
+    mangas
+    |> Enum.each(fn m ->
+      update(m)
+      Process.sleep(@same_host_interval)
+    end)
   end
 
   def update(manga) do
