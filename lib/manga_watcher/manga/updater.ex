@@ -12,7 +12,11 @@ defmodule MangaWatcher.Manga.Updater do
 
     mangas
     |> Enum.group_by(&URI.parse(&1.url).host)
-    |> Task.async_stream(__MODULE__, :update_group, [], ordered: false, timeout: 180_000)
+    |> Task.async_stream(__MODULE__, :update_group, [],
+      ordered: false,
+      timeout: 180_000,
+      max_concurrency: 10
+    )
     |> Stream.run()
 
     Logger.info("finished updating mangas")
