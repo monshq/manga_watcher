@@ -56,7 +56,7 @@ defmodule MangaWatcher.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:tesla, "~> 1.4"},
-      {:plug_cowboy, "~> 2.5"},
+      {:bandit, "~> 1.0"},
       {:credo, "~> 1.7", only: ~w(dev test)a, runtime: false},
       {:ex_check, "~> 0.14.0", only: ~w(dev test)a, runtime: false}
     ]

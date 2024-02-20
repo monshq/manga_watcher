@@ -16,6 +16,7 @@ config :manga_watcher,
 
 # Configures the endpoint
 config :manga_watcher, MangaWatcherWeb.Endpoint,
+  adapter: Bandit.PhoenixAdapter,
   url: [host: "localhost"],
   render_errors: [
     formats: [html: MangaWatcherWeb.ErrorHTML, json: MangaWatcherWeb.ErrorJSON],
