@@ -78,6 +78,24 @@
           </div>
         </div>
 
+        <div class="my-3 px-6">
+          <button
+            type="button"
+            phx-click="show_all"
+            class="py-0.5 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
+          >
+            Show all
+          </button>
+          <%= for t <- @tags do %>
+            <.manga_tag
+              id={t.id}
+              name={t.name}
+              include={t.name in @include_tags}
+              exclude={t.name in @exclude_tags}
+            />
+          <% end %>
+        </div>
+
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 overflow-x-auto">
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
             <%= for manga <- @mangas do %>

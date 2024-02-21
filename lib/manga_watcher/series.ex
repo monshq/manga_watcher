@@ -5,6 +5,7 @@ defmodule MangaWatcher.Series do
 
   import Ecto.Query, warn: false
 
+  alias MangaWatcher.Series.Tag
   alias MangaWatcher.Manga.Updater
   alias MangaWatcher.Series.Manga
   alias MangaWatcher.Repo
@@ -22,6 +23,33 @@ defmodule MangaWatcher.Series do
   """
   def list_mangas() do
     Manga
+    |> order_by(desc: fragment("last_chapter - last_read_chapter"))
+    |> order_by(desc: :updated_at)
+    |> Repo.all()
+  end
+
+  def list_tags() do
+    Repo.all(Tag)
+  end
+
+  def filter_mangas(include_tags, exclude_tags) do
+    query =
+      case include_tags do
+        [] ->
+          from m in Manga,
+            left_join: t in assoc(m, :tags),
+            where: is_nil(t.name) or t.name not in ^exclude_tags,
+            group_by: m.id
+
+        _ ->
+          from m in Manga,
+            left_join: t in assoc(m, :tags),
+            where: is_nil(t.name) or t.name not in ^exclude_tags,
+            where: t.name in ^include_tags,
+            group_by: m.id
+      end
+
+    query
     |> order_by(desc: fragment("last_chapter - last_read_chapter"))
     |> order_by(desc: :updated_at)
     |> Repo.all()
