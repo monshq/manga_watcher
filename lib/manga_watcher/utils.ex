@@ -9,4 +9,18 @@ defmodule MangaWatcher.Utils do
 
   defp to_atom(s) when is_binary(s), do: String.to_existing_atom(s)
   defp to_atom(a), do: a
+
+  def normalize_url(url) do
+    uri = URI.parse(url |> String.trim_trailing("/"))
+    host_and_path = wrap(uri.host) <> wrap(uri.path)
+
+    if is_binary(uri.scheme) do
+      uri.scheme <> "://" <> host_and_path
+    else
+      host_and_path
+    end
+  end
+
+  defp wrap(b) when is_binary(b), do: b
+  defp wrap(_), do: ""
 end

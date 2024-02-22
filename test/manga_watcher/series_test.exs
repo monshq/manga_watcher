@@ -12,11 +12,11 @@ defmodule MangaWatcher.SeriesTest do
 
     test "list_mangas/0 returns all mangas" do
       manga = manga_fixture()
-      assert Series.list_mangas() == [Ecto.reset_fields(manga, [:tags])]
+      assert Series.list_mangas() == [manga]
     end
 
     test "get_manga!/1 returns the manga with given id" do
-      manga = manga_fixture()
+      manga = manga_fixture() |> Repo.preload(:tags)
       assert Series.get_manga!(manga.id) == manga
     end
 
@@ -47,7 +47,7 @@ defmodule MangaWatcher.SeriesTest do
     end
 
     test "update_manga/2 with invalid data returns error changeset" do
-      manga = manga_fixture()
+      manga = manga_fixture() |> Repo.preload(:tags)
       assert {:error, %Ecto.Changeset{}} = Series.update_manga(manga, @invalid_attrs)
       assert manga == Series.get_manga!(manga.id)
     end
@@ -66,7 +66,7 @@ defmodule MangaWatcher.SeriesTest do
     test "refresh_all_manga/0 doesn't throw errors" do
       manga = manga_fixture()
       assert :ok = Series.refresh_all_manga()
-      assert [Ecto.reset_fields(manga, [:tags])] == Series.list_mangas()
+      assert [manga] == Series.list_mangas()
     end
   end
 end

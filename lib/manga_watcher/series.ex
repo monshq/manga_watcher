@@ -12,15 +12,10 @@ defmodule MangaWatcher.Series do
 
   require Logger
 
-  @doc """
-  Returns the list of mangas.
+  def list_tags() do
+    Repo.all(Tag)
+  end
 
-  ## Examples
-
-      iex> list_mangas()
-      [%Manga{}, ...]
-
-  """
   def list_mangas() do
     Manga
     |> order_by(desc: fragment("last_chapter - last_read_chapter"))
@@ -28,8 +23,11 @@ defmodule MangaWatcher.Series do
     |> Repo.all()
   end
 
-  def list_tags() do
-    Repo.all(Tag)
+  def broken_asura_mangas() do
+    Manga
+    |> where(fragment("failed_updates > 5"))
+    |> where(fragment("url ilike '%asura%'"))
+    |> Repo.all()
   end
 
   def filter_mangas(include_tags, exclude_tags) do
@@ -55,20 +53,6 @@ defmodule MangaWatcher.Series do
     |> Repo.all()
   end
 
-  @doc """
-  Gets a single manga.
-
-  Raises `Ecto.NoResultsError` if the Manga does not exist.
-
-  ## Examples
-
-      iex> get_manga!(123)
-      %Manga{}
-
-      iex> get_manga!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_manga!(id) do
     Manga
     |> preload(:tags)
@@ -79,18 +63,6 @@ defmodule MangaWatcher.Series do
     Manga.pre_create_changeset(attrs)
   end
 
-  @doc """
-  Creates a manga.
-
-  ## Examples
-
-      iex> create_manga(%{field: value})
-      {:ok, %Manga{}}
-
-      iex> create_manga(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def create_manga(attrs \\ %{}) do
     cs = Manga.pre_create_changeset(attrs)
 
@@ -105,18 +77,6 @@ defmodule MangaWatcher.Series do
     end
   end
 
-  @doc """
-  Updates a manga.
-
-  ## Examples
-
-      iex> update_manga(manga, %{field: new_value})
-      {:ok, %Manga{}}
-
-      iex> update_manga(manga, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def update_manga(%Manga{} = manga, attrs) do
     manga
     |> Manga.update_changeset(attrs)
@@ -127,31 +87,10 @@ defmodule MangaWatcher.Series do
     list_mangas() |> Repo.preload(:tags) |> Updater.batch_update()
   end
 
-  @doc """
-  Deletes a manga.
-
-  ## Examples
-
-      iex> delete_manga(manga)
-      {:ok, %Manga{}}
-
-      iex> delete_manga(manga)
-      {:error, %Ecto.Changeset{}}
-
-  """
   def delete_manga(%Manga{} = manga) do
     Repo.delete(manga)
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking manga changes.
-
-  ## Examples
-
-      iex> change_manga(manga)
-      %Ecto.Changeset{data: %Manga{}}
-
-  """
   def change_manga(%Manga{} = manga, attrs \\ %{}) do
     Manga.pre_update_changeset(manga, attrs)
   end

@@ -4,6 +4,7 @@ defmodule MangaWatcher.Series.Manga do
 
   alias MangaWatcher.Repo
   alias MangaWatcher.Series.Tag
+  alias MangaWatcher.Utils
 
   import Ecto.Query
 
@@ -38,7 +39,7 @@ defmodule MangaWatcher.Series.Manga do
     pre_create_changeset(attrs)
     |> cast(attrs, [:name, :url, :last_read_chapter, :last_chapter])
     |> unique_constraint(:url)
-    |> put_assoc(:tags, parse_tags(attrs))
+    |> put_tags_if_changed(attrs)
   end
 
   @doc false
@@ -56,32 +57,26 @@ defmodule MangaWatcher.Series.Manga do
   def update_changeset(manga, attrs) do
     manga
     |> pre_update_changeset(attrs)
-    |> put_assoc(:tags, parse_tags(attrs))
+    |> put_tags_if_changed(attrs)
   end
 
   defp normalize_url(changeset) do
     url = changeset |> get_field(:url)
 
     if url do
-      cast(changeset, %{url: normalized_url(url)}, [:url])
+      cast(changeset, %{url: Utils.normalize_url(url)}, [:url])
     else
       changeset
     end
   end
 
-  defp normalized_url(url) do
-    uri = URI.parse(url |> String.trim_trailing("/"))
-    host_and_path = wrap(uri.host) <> wrap(uri.path)
-
-    if is_binary(uri.scheme) do
-      uri.scheme <> "://" <> host_and_path
+  defp put_tags_if_changed(cs, attrs) do
+    if attrs["tags"] do
+      put_assoc(cs, :tags, parse_tags(attrs))
     else
-      host_and_path
+      cs
     end
   end
-
-  defp wrap(b) when is_binary(b), do: b
-  defp wrap(_), do: ""
 
   defp parse_tags(params) do
     (params["tags"] || "")
