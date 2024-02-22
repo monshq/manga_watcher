@@ -101,7 +101,9 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
   end
 
   defp save_manga(socket, :edit, manga_params) do
-    case Series.update_manga(socket.assigns.manga, manga_params) do
+    params = Utils.atomize_keys(manga_params)
+
+    case Series.update_manga(socket.assigns.manga, params) do
       {:ok, manga} ->
         notify_parent({:saved, manga})
 

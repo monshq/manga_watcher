@@ -27,23 +27,35 @@ defmodule MangaWatcher.SeriesTest do
       assert manga.url == "http://new/url"
     end
 
+    test "create_manga/1 with tags creates a manga and tags" do
+      valid_attrs = %{url: "http://new/url", tags: "shoujo-ai, yuri"}
+
+      assert {:ok, %Manga{} = manga} = Series.create_manga(valid_attrs)
+      assert manga.url == "http://new/url"
+      manga = Repo.preload(manga, :tags)
+      assert length(manga.tags) == 2
+    end
+
     test "create_manga/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Series.create_manga(@invalid_attrs)
     end
 
     test "update_manga/2 with valid data updates the manga" do
-      manga = manga_fixture()
+      manga = manga_fixture() |> Repo.preload(:tags)
 
       update_attrs = %{
         last_chapter: 43,
         last_read_chapter: 43,
-        url: "http://some/updated/url"
+        url: "http://some/updated/url",
+        tags: "example"
       }
 
       assert {:ok, %Manga{} = manga} = Series.update_manga(manga, update_attrs)
       assert manga.last_chapter == 43
       assert manga.last_read_chapter == 43
       assert manga.url == "http://some/updated/url"
+      manga = Repo.preload(manga, :tags)
+      assert length(manga.tags) == 1
     end
 
     test "update_manga/2 with invalid data returns error changeset" do

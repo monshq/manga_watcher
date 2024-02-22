@@ -4,8 +4,10 @@ defmodule MangaWatcherWeb.MangaLiveTest do
   import Phoenix.LiveViewTest
   import MangaWatcher.SeriesFixtures
 
-  @create_attrs %{url: "http://some.url"}
-  @update_attrs %{url: "http://some.url"}
+  alias MangaWatcher.Series
+
+  @create_attrs %{url: "http://some.url", tags: "shoujo-ai, yuri"}
+  @update_attrs %{url: "http://some.url", tags: "seinen"}
   @invalid_attrs %{url: ""}
 
   defp create_manga(_) do
@@ -42,6 +44,10 @@ defmodule MangaWatcherWeb.MangaLiveTest do
 
       html = render(index_live)
       assert html =~ "Manga created successfully"
+
+      m = Series.list_mangas() |> Enum.find(fn m -> m.url == @create_attrs[:url] end)
+      m = Series.get_manga!(m.id)
+      assert Enum.map_join(m.tags, ", ", fn t -> t.name end) == "shoujo-ai, yuri"
     end
 
     test "updates manga in listing", %{conn: conn, manga: manga} do
@@ -64,6 +70,10 @@ defmodule MangaWatcherWeb.MangaLiveTest do
 
       html = render(index_live)
       assert html =~ "Manga updated successfully"
+
+      m = Series.get_manga!(manga.id)
+      assert m.url == @update_attrs[:url]
+      assert Enum.map_join(m.tags, ", ", fn t -> t.name end) == "seinen"
     end
 
     test "deletes manga in listing", %{conn: conn, manga: manga} do

@@ -71,7 +71,7 @@ defmodule MangaWatcher.Series.Manga do
   end
 
   defp put_tags_if_changed(cs, attrs) do
-    if attrs["tags"] do
+    if Map.has_key?(attrs, :tags) and is_binary(attrs[:tags]) do
       put_assoc(cs, :tags, parse_tags(attrs))
     else
       cs
@@ -79,7 +79,7 @@ defmodule MangaWatcher.Series.Manga do
   end
 
   defp parse_tags(params) do
-    (params["tags"] || "")
+    (params[:tags] || "")
     |> String.split(",")
     |> Enum.map(&String.trim/1)
     |> Enum.reject(&(&1 == ""))
