@@ -11,10 +11,7 @@
     <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}>
     </script>
   </head>
-  <body
-    class="antialiased bg-neutral-100 dark:bg-neutral-800"
-    hx-headers={"{\"X-CSRF-Token\": \"#{get_csrf_token()}\"}"}
-  >
+  <body class="antialiased bg-base" hx-headers={"{\"X-CSRF-Token\": \"#{get_csrf_token()}\"}"}>
     <%= @inner_content %>
   </body>
 </html>
