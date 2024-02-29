@@ -12,9 +12,15 @@ defmodule MangaWatcher.Series do
 
   require Logger
 
+  # SOURCES
+
+  # TAGS
+
   def list_tags() do
     Repo.all(Tag)
   end
+
+  # MANGAS
 
   def list_mangas() do
     Manga

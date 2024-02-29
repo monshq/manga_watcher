@@ -1,0 +1,28 @@
+<.header>
+  Website <%= @website.id %>
+  <:subtitle>This is a website record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/websites/#{@website}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit website</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Base url"><%= @website.base_url %></:item>
+  <:item title="Title regex"><%= @website.title_regex %></:item>
+  <:item title="Links regex"><%= @website.links_regex %></:item>
+</.list>
+
+<.back navigate={~p"/websites"}>Back to websites</.back>
+
+<.modal :if={@live_action == :edit} id="website-modal" show on_cancel={JS.patch(~p"/websites/#{@website}")}>
+  <.live_component
+    module={MangaWatcherWeb.WebsiteLive.FormComponent}
+    id={@website.id}
+    title={@page_title}
+    action={@live_action}
+    website={@website}
+    patch={~p"/websites/#{@website}"}
+  />
+</.modal>

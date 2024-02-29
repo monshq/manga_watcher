@@ -7,6 +7,8 @@ defmodule MangaWatcher.Manga.PageParser do
   def parse(page) do
     {:ok, doc} = Floki.parse_document(page)
 
+    websites = MangaSources.list_websites()
+
     name =
       Enum.find_value(@titles, fn el ->
         Floki.find(doc, el) |> Floki.text() |> wrap_empty()
