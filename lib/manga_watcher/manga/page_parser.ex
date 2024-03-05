@@ -1,15 +1,18 @@
 defmodule MangaWatcher.Manga.PageParser do
+  @titles [".main-head h1", "h1.entry-title"]
+  @links [".chapter-list a", "#chapterlist a"]
+
   @spec parse(binary) :: {:ok, map} | {:error, atom}
   def parse(page) do
     {:ok, doc} = Floki.parse_document(page)
 
     name =
-      Enum.find_value([".main-head h1", "h1.entry-title"], fn el ->
+      Enum.find_value(@titles, fn el ->
         Floki.find(doc, el) |> Floki.text() |> wrap_empty()
       end)
 
     links =
-      Enum.find_value([".chapter-list a", "#chapterlist a"], [], fn el ->
+      Enum.find_value(@links, [], fn el ->
         Floki.attribute(doc, el, "href") |> wrap_empty()
       end)
 
