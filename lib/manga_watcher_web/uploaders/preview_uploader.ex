@@ -9,9 +9,9 @@ defmodule MangaWatcher.PreviewUploader do
   # @versions [:original, :thumb]
 
   # Override the bucket on a per definition basis:
-  # def bucket do
-  #   :custom_bucket_name
-  # end
+  def bucket do
+    :preview
+  end
 
   # def bucket({_file, scope}) do
   #   scope.bucket || bucket()
@@ -44,7 +44,7 @@ defmodule MangaWatcher.PreviewUploader do
 
   # Provide a default URL if there hasn't been a file uploaded
   def default_url(_version, _scope) do
-    "/images/preview/default.jpg"
+    "/images/default_preview.jpg"
   end
 
   # Specify custom headers for s3 objects

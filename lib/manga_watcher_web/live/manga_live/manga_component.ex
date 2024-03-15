@@ -45,8 +45,10 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
     <tr id={"mangas-#{@id}"} class="bg-base-2">
       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-gray-200">
         <.link href={@manga.url}>
-          <image src={PreviewUploader.url(@manga.preview)} />
-          <%= @manga.name %>
+          <div class="flex">
+            <image src={PreviewUploader.url(@manga.preview)} class="w-10 h-14 mr-5" />
+            <span class="flex items-center"><%= @manga.name %></span>
+          </div>
         </.link>
         <dl class="md:hidden">
           <dd>

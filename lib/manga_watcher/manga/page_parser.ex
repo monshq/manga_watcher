@@ -1,6 +1,7 @@
 defmodule MangaWatcher.Manga.PageParser do
   @titles [".main-head h1", "h1.entry-title"]
   @links [".chapter-list a", "#chapterlist a"]
+  @previews ["figure.cover img", ".thumbook img"]
 
   @spec parse(binary) :: {:ok, map} | {:error, atom}
   def parse(page) do
@@ -9,6 +10,11 @@ defmodule MangaWatcher.Manga.PageParser do
     name =
       Enum.find_value(@titles, fn el ->
         Floki.find(doc, el) |> Floki.text() |> wrap_empty()
+      end)
+
+    preview =
+      Enum.find_value(@previews, fn el ->
+        Floki.attribute(doc, el, "src") |> first_or_false()
       end)
 
     links =
@@ -26,7 +32,7 @@ defmodule MangaWatcher.Manga.PageParser do
       |> Stream.map(&String.to_integer/1)
       |> Enum.max()
 
-    res = %{name: name, last_chapter: last_chapter}
+    res = %{name: name, last_chapter: last_chapter, preview: preview}
     {:ok, res}
   rescue
     e ->
@@ -36,4 +42,7 @@ defmodule MangaWatcher.Manga.PageParser do
   defp wrap_empty(val) when val == "", do: false
   defp wrap_empty(val) when val == [], do: false
   defp wrap_empty(val), do: val
+
+  defp first_or_false([_] = l), do: hd(l)
+  defp first_or_false(_), do: false
 end

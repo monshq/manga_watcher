@@ -1,4 +1,5 @@
 defmodule MangaWatcher.Manga.Updater do
+  alias MangaWatcher.PreviewUploader
   alias MangaWatcher.Series
   alias MangaWatcher.Manga.PageParser
 
@@ -46,8 +47,9 @@ defmodule MangaWatcher.Manga.Updater do
   def parse_attrs(manga_attrs) do
     with {:ok, url} <- Map.fetch(manga_attrs, :url),
          {:ok, html_content} <- @downloader.download(url),
-         {:ok, attrs} <- PageParser.parse(html_content) do
-      {:ok, Map.merge(manga_attrs, attrs)}
+         {:ok, attrs} <- PageParser.parse(html_content),
+         {:ok, preview} <- store_preview(attrs[:preview], manga_attrs[:preview], attrs[:name]) do
+      {:ok, manga_attrs |> Map.merge(attrs) |> Map.merge(%{preview: preview})}
     else
       :error ->
         {:error, "url is missing"}
@@ -55,5 +57,36 @@ defmodule MangaWatcher.Manga.Updater do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  defp store_preview(nil, _, _), do: {:ok, nil}
+
+  defp store_preview(new_preview, nil, name) do
+    case @downloader.download(new_preview) do
+      {:ok, preview_bin} ->
+        PreviewUploader.store(%{
+          filename: preview_filename(name, new_preview),
+          binary: preview_bin
+        })
+
+      {:error, error} ->
+        Logger.error("could not download preview for #{name}: #{inspect(error)}")
+        {:ok, nil}
+    end
+  end
+
+  defp store_preview(_, original_preview, _), do: {:ok, original_preview}
+
+  defp preview_filename(manga_name, url) do
+    name =
+      manga_name
+      |> String.downcase()
+      |> String.replace(~r/\s+/, "_")
+      |> String.replace(~r/[^A-z]+/, "")
+
+    ext =
+      url |> Path.extname() |> String.downcase()
+
+    name <> ext
   end
 end

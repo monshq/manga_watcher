@@ -38,7 +38,7 @@ defmodule MangaWatcher.Series.Manga do
   @doc false
   def create_changeset(attrs) do
     pre_create_changeset(attrs)
-    |> cast(attrs, [:name, :url, :last_read_chapter, :last_chapter])
+    |> cast(attrs, [:name, :url, :last_read_chapter, :last_chapter, :preview])
     |> unique_constraint(:url)
     |> put_tags_if_changed(attrs)
   end
@@ -46,7 +46,7 @@ defmodule MangaWatcher.Series.Manga do
   @doc false
   def pre_update_changeset(manga, attrs) do
     manga
-    |> cast(attrs, [:name, :url, :last_read_chapter, :last_chapter, :failed_updates])
+    |> cast(attrs, [:name, :url, :last_read_chapter, :last_chapter, :failed_updates, :preview])
     |> validate_required([:name, :url, :last_read_chapter, :last_chapter])
     |> validate_format(:url, @url_format)
     |> normalize_url()
