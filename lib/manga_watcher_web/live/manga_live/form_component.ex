@@ -29,11 +29,7 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
           <.button phx-disable-with="Saving...">Save Manga</.button>
           <%= if @action == :edit do %>
             <div>
-              <.button
-                type="button"
-                phx-click="rescan"
-                phx-value-id={@manga.id}
-              >
+              <.button type="button" phx-click="rescan" phx-value-id={@manga.id}>
                 Rescan manga
               </.button>
               <.button

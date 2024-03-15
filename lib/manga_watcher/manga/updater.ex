@@ -48,7 +48,8 @@ defmodule MangaWatcher.Manga.Updater do
     with {:ok, url} <- Map.fetch(manga_attrs, :url),
          {:ok, html_content} <- @downloader.download(url),
          {:ok, attrs} <- PageParser.parse(html_content),
-         {:ok, preview} <- store_preview(attrs[:preview], manga_attrs[:preview], attrs[:name], url) do
+         {:ok, preview} <-
+           store_preview(attrs[:preview], manga_attrs[:preview], attrs[:name], url) do
       {:ok, manga_attrs |> Map.merge(attrs) |> Map.merge(%{preview: preview})}
     else
       :error ->
@@ -64,9 +65,7 @@ defmodule MangaWatcher.Manga.Updater do
   defp store_preview(new_preview, nil, name, url) do
     Logger.debug("downloading preview from #{new_preview}")
 
-    uri = URI.parse(url)
-    referer = uri.scheme <> "://" <> uri.host
-    case @downloader.download(new_preview, referer) do
+    case @downloader.download(new_preview, get_referer(url)) do
       {:ok, preview_bin} ->
         PreviewUploader.store(%{
           filename: preview_filename(name, new_preview),
@@ -98,5 +97,11 @@ defmodule MangaWatcher.Manga.Updater do
       url |> Path.extname() |> String.downcase()
 
     name <> ext
+  end
+
+  defp get_referer(url) do
+    "https://" <> URI.parse(url).host
+  rescue
+    _ -> ""
   end
 end
