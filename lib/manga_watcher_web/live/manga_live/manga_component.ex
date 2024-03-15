@@ -1,4 +1,5 @@
 defmodule MangaWatcherWeb.MangaLive.MangaComponent do
+  alias MangaWatcher.PreviewUploader
   use MangaWatcherWeb, :live_component
 
   alias MangaWatcher.Series
@@ -43,7 +44,10 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
     ~H"""
     <tr id={"mangas-#{@id}"} class="bg-base-2">
       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-gray-200">
-        <.link href={@manga.url}><%= @manga.name %></.link>
+        <.link href={@manga.url}>
+          <image src={PreviewUploader.url(@manga.preview)} />
+          <%= @manga.name %>
+        </.link>
         <dl class="md:hidden">
           <dd>
             <.manga_chapters manga={@manga} />

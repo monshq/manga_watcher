@@ -9,6 +9,8 @@ defmodule MangaWatcherWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
 
+    plug Plug.Static, at: "/images", from: {:app_name, "priv/static/images"}
+
     if Application.compile_env(:manga_watcher, :basic_auth)[:enabled] do
       plug :auth, Application.compile_env(:manga_watcher, :basic_auth)
     end

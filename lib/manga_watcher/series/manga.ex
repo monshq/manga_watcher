@@ -14,6 +14,7 @@ defmodule MangaWatcher.Series.Manga do
     field :name, :string
     field :url, :string
     field :failed_updates, :integer, default: 0
+    field :preview, :string
 
     many_to_many :tags, Tag, join_through: "manga_tags", on_replace: :delete
 
