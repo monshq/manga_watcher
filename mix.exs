@@ -55,7 +55,7 @@ defmodule MangaWatcher.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
-      {:tesla, "~> 1.4"},
+      {:req, "~> 0.4.0"},
       {:bandit, "~> 1.0"},
       {:credo, "~> 1.7", only: ~w(dev test)a, runtime: false},
       {:ex_check, "~> 0.14.0", only: ~w(dev test)a, runtime: false}
