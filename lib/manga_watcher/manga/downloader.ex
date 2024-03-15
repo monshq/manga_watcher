@@ -1,13 +1,7 @@
 defmodule MangaWatcher.Manga.Downloader do
   @spec download(String.t()) :: {:ok, binary} | {:error, atom}
   def download(url) do
-    case Req.get!(url, retry: false) do
-      %Req.Response{status: 200, body: body} ->
-        {:ok, body}
-
-      %Req.Response{status: status} ->
-        {:error, "wrong response code: #{status}"}
-    end
+    {:ok, Req.get!(url, retry: false, http_errors: :raise).body}
   rescue
     e -> {:error, e}
   end

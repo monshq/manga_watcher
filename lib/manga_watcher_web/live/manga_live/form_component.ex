@@ -28,14 +28,23 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
         <:actions>
           <.button phx-disable-with="Saving...">Save Manga</.button>
           <%= if @action == :edit do %>
-            <.button
-              type="button"
-              data-confirm="Are you sure?"
-              phx-click="delete"
-              phx-value-id={@manga.id}
-            >
-              Delete manga
-            </.button>
+            <div>
+              <.button
+                type="button"
+                phx-click="rescan"
+                phx-value-id={@manga.id}
+              >
+                Rescan manga
+              </.button>
+              <.button
+                type="button"
+                data-confirm="Are you sure?"
+                phx-click="delete"
+                phx-value-id={@manga.id}
+              >
+                Delete manga
+              </.button>
+            </div>
           <% end %>
         </:actions>
       </.simple_form>

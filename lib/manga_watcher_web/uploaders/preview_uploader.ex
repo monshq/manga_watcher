@@ -47,6 +47,12 @@ defmodule MangaWatcher.PreviewUploader do
     "/images/default_preview.jpg"
   end
 
+  def exists?(name) do
+    prefix = Application.get_env(:waffle, :storage_dir_prefix)
+    dir = Application.get_env(:waffle, :storage_dir)
+    File.exists?("#{prefix}/#{dir}/#{name}")
+  end
+
   # Specify custom headers for s3 objects
   # Available options are [:cache_control, :content_disposition,
   #    :content_encoding, :content_length, :content_type,

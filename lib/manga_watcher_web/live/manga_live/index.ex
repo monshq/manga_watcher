@@ -4,6 +4,7 @@ defmodule MangaWatcherWeb.MangaLive.Index do
 
   alias MangaWatcher.Series
   alias MangaWatcher.Series.Manga
+  alias MangaWatcher.Manga.Updater
 
   require Logger
 
@@ -57,6 +58,19 @@ defmodule MangaWatcherWeb.MangaLive.Index do
   def handle_event("delete", %{"id" => id}, socket) do
     manga = Series.get_manga!(id)
     {:ok, _} = Series.delete_manga(manga)
+
+    socket =
+      socket
+      |> assign(:mangas, list_mangas_with_current_filter(socket.assigns))
+      |> push_patch(to: ~p/\//)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("rescan", %{"id" => id}, socket) do
+    manga = Series.get_manga!(id)
+    Updater.update(manga)
 
     socket =
       socket

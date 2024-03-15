@@ -62,6 +62,8 @@ defmodule MangaWatcher.Manga.Updater do
   defp store_preview(nil, _, _), do: {:ok, nil}
 
   defp store_preview(new_preview, nil, name) do
+    Logger.debug("downloading preview from #{new_preview}")
+
     case @downloader.download(new_preview) do
       {:ok, preview_bin} ->
         PreviewUploader.store(%{
@@ -75,7 +77,13 @@ defmodule MangaWatcher.Manga.Updater do
     end
   end
 
-  defp store_preview(_, original_preview, _), do: {:ok, original_preview}
+  defp store_preview(new_preview, original_preview, name) do
+    if PreviewUploader.exists?(original_preview) do
+      {:ok, original_preview}
+    else
+      store_preview(new_preview, nil, name)
+    end
+  end
 
   defp preview_filename(manga_name, url) do
     name =

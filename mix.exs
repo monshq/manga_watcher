@@ -57,6 +57,7 @@ defmodule MangaWatcher.MixProject do
       {:jason, "~> 1.2"},
       {:req, "~> 0.4.0"},
       {:bandit, "~> 1.0"},
+      {:tesla, "~> 1.1"},
       {:waffle, "~> 1.1"},
       {:waffle_ecto, "~> 0.0"},
       {:credo, "~> 1.7", only: ~w(dev test)a, runtime: false},
