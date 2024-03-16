@@ -10,7 +10,7 @@ defmodule MangaWatcherWeb.TagComponent do
 
   def manga_tag(assigns) do
     ~H"""
-    <span>
+    <span class="py-2">
       <%= if @include do %>
         <button phx-click="filter" phx-value-id={@id} phx-value-name={@name} phx-value-state="plus">
           <div class="ml-4 text-xs inline-flex items-center font-bold leading-sm uppercase px-3 py-1

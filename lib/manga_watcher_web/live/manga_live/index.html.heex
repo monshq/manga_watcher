@@ -78,14 +78,15 @@
           </div>
         </div>
 
-        <div class="my-3 px-6">
-          <button
-            type="button"
-            phx-click="show_all"
-            class="py-0.5 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
-          >
-            Show all
-          </button>
+        <div class="my-1 px-2 flex whitespace-nowrap">
+          <span class="py-2">
+            <button type="button" phx-click="show_all">
+              <div class="ml-4 text-xs inline-flex items-center font-bold leading-sm uppercase px-3 py-1
+            bg-blue-600 hover:bg-blue-700 text-white rounded-full">
+                Show all
+              </div>
+            </button>
+          </span>
           <%= for t <- @tags do %>
             <.manga_tag
               id={t.id}
