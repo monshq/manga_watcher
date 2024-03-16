@@ -42,25 +42,25 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <tr id={"mangas-#{@id}"} class="bg-base-2">
-      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-gray-200">
-        <.link href={@manga.url}>
-          <div class="flex">
-            <image src={PreviewUploader.url(@manga.preview)} class="w-10 h-14 mr-5" />
-            <span class="flex items-center"><%= @manga.name %></span>
-          </div>
-        </.link>
-        <dl class="md:hidden">
-          <dd>
-            <.manga_chapters manga={@manga} />
-          </dd>
-        </dl>
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm md:table-cell hidden">
-        <.manga_chapters manga={@manga} />
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-        <div class="flex justify-end align-center md:gap-4 gap-1 flex-col md:flex-row">
+    <card id={"mangas-#{@id}"} class="bg-base-2 flex flex-row max-h-28">
+      <.link target="_blank" href={@manga.url}>
+        <image
+          src={PreviewUploader.url(@manga.preview)}
+          class="object-cover w-20 h-28 max-w-max mr-3"
+        />
+      </.link>
+      <div class="grow flex flex-col justify-between">
+        <div>
+          <.link target="_blank" href={@manga.url} class="font-medium dark:text-white">
+            <%= @manga.name %>
+          </.link>
+          <dl class="">
+            <dd>
+              <.manga_chapters manga={@manga} />
+            </dd>
+          </dl>
+        </div>
+        <div class="mb-2 mr-2 flex justify-end md:gap-4 gap-1 flex-row whitespace-nowrap">
           <%= if @manga.last_chapter == @manga.last_read_chapter do %>
             <button
               disabled
@@ -80,8 +80,8 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
           <% end %>
           <.edit_button manga={@manga} />
         </div>
-      </td>
-    </tr>
+      </div>
+    </card>
     """
   end
 

@@ -4,6 +4,12 @@
 
 /* This file is for your main application CSS */
 
+.card-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  grid-gap: 1rem;
+}
+
 /* @layer components { */
 /*   .bg-primary { */
 /*     background-color: red; */
