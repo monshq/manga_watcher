@@ -27,5 +27,7 @@ release-local:
 	mkdir -p /srv/projects/manga_watcher/current
 	cp -r _build/prod/rel/manga_watcher/* /srv/projects/manga_watcher/current
 	ln -sn /var/log/projects/manga_watcher /srv/projects/manga_watcher/current/log
+	rm -rf /srv/projects/manga_watcher/current/shared
+	ln -sn /srv/projects/manga_watcher/shared /srv/projects/manga_watcher/current/shared
 	sudo init-exporter -p Procfile manga_watcher
 	sudo systemctl restart apps-manga_watcher

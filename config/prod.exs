@@ -23,4 +23,9 @@ config :logger, level: :info
 config :manga_watcher, MangaWatcher.Manga.UpdatePoller, enabled: true
 config :manga_watcher, :same_host_interval, 5000
 
+config :waffle,
+  storage: Waffle.Storage.Local,
+  storage_dir: "images",
+  storage_dir_prefix: "shared"
+
 import_config("secrets.exs")
