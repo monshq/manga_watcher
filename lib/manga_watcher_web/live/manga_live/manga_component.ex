@@ -42,7 +42,7 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <card id={"mangas-#{@id}"} class="bg-base-2 flex flex-row max-h-28">
+    <card id={"mangas-#{@id}"} class="bg-base-2 flex flex-row max-h-28 min-w-0 max-w-full">
       <.link target="_blank" href={@manga.url}>
         <image
           src={PreviewUploader.url(@manga.preview)}
