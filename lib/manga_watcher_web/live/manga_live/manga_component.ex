@@ -61,15 +61,7 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
           </dl>
         </div>
         <div class="mb-2 mr-2 flex justify-end md:gap-4 gap-1 flex-row whitespace-nowrap">
-          <%= if @manga.last_chapter == @manga.last_read_chapter do %>
-            <button
-              disabled
-              type="button"
-              class="inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent text-gray-400 disabled:opacity-50 disabled:pointer-events-none dark:text-gray-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
-            >
-              ✔️ Nothing to do
-            </button>
-          <% else %>
+          <%= if @manga.last_chapter != @manga.last_read_chapter do %>
             <button
               phx-click="mark_as_read"
               phx-target={@myself}
