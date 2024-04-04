@@ -30,6 +30,9 @@ defmodule MangaWatcherWeb.TagComponent do
   attr :colors, :string
 
   defp tag_button(assigns) do
+    # uses hero-plus hero-minus hero-stop
+    # since they are not mentioned directly in the code, they have to be in the comment,
+    # otherwise they're not included in the final build
     assigns =
       assign(assigns, :icons, %{
         "plus" => "plus",
