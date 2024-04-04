@@ -12,38 +12,39 @@ defmodule MangaWatcherWeb.TagComponent do
     ~H"""
     <span class="py-2">
       <%= if @include do %>
-        <button phx-click="filter" phx-value-id={@id} phx-value-name={@name} phx-value-state="plus">
-          <div class="ml-4 text-xs inline-flex items-center font-bold leading-sm uppercase px-3 py-1
-          bg-green-200 text-green-700 rounded-full">
-            <.icon name="hero-plus" class="mr-1 w-3 h-3" />
-            <%= @name %>
-          </div>
-        </button>
+        <.tag_button id={@id} name={@name} state="plus" colors="bg-green-200 text-green-700" />
       <% else %>
         <%= if @exclude do %>
-          <button phx-click="filter" phx-value-id={@id} phx-value-name={@name} phx-value-state="minus">
-            <div class="ml-4 text-xs inline-flex items-center font-bold leading-sm uppercase px-3 py-1
-            bg-red-200 text-red-700 rounded-full">
-              <.icon name="hero-minus" class="mr-1 w-3 h-3" />
-              <%= @name %>
-            </div>
-          </button>
+          <.tag_button id={@id} name={@name} state="minus" colors="bg-red-200 text-red-700" />
         <% else %>
-          <button
-            phx-click="filter"
-            phx-value-id={@id}
-            phx-value-name={@name}
-            phx-value-state="neutral"
-          >
-            <div class="ml-4 text-xs inline-flex items-center font-bold leading-sm uppercase px-3 py-1
-            bg-gray-200 text-gray-700 rounded-full">
-              <.icon name="hero-stop" class="mr-1 w-3 h-3" />
-              <%= @name %>
-            </div>
-          </button>
+          <.tag_button id={@id} name={@name} state="neutral" colors="bg-gray-200 text-gray-700" />
         <% end %>
       <% end %>
     </span>
+    """
+  end
+
+  attr :state, :string, required: true
+  attr :id, :integer, required: true
+  attr :name, :string, doc: "tag name"
+  attr :colors, :string
+
+  defp tag_button(assigns) do
+    assigns =
+      assign(assigns, :icons, %{
+        "plus" => "plus",
+        "minus" => "minus",
+        "neutral" => "stop"
+      })
+
+    ~H"""
+    <button phx-click="filter" phx-value-id={@id} phx-value-name={@name} phx-value-state={@state}>
+      <div class={"ml-4 text-xs inline-flex items-center font-bold leading-sm uppercase px-3 py-1
+              rounded-full #{@colors}"}>
+        <.icon name={"hero-#{@icons[@state]}"} class="mr-1 w-3 h-3" />
+        <%= @name %>
+      </div>
+    </button>
     """
   end
 end
