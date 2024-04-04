@@ -34,3 +34,8 @@ config :phoenix, :plug_init_mode, :runtime
 
 config :manga_watcher, :page_downloader, MangaWatcher.Fake.Downloader
 config :manga_watcher, :same_host_interval, 5
+
+config :waffle,
+  storage: Waffle.Storage.Local,
+  storage_dir: "images",
+  storage_dir_prefix: "tmp/static"
