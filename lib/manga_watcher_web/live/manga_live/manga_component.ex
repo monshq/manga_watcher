@@ -43,11 +43,12 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
   def render(assigns) do
     ~H"""
     <card id={"mangas-#{@id}"} class="bg-base-2 flex flex-row">
-      <.link target="_blank" href={@manga.url} class="max-w-[30%] mr-3 flex">
-        <image
-          src={PreviewUploader.url(@manga.preview)}
-          class="object-cover min-w-full min-h-max max-h-max"
-        />
+      <.link
+        target="_blank"
+        href={@manga.url}
+        class="basis-[30%] grow-0 shrink-0 mr-3 flex aspect-[10/14]"
+      >
+        <image src={PreviewUploader.url(@manga.preview)} class="object-cover" />
       </.link>
       <div class="grow flex flex-col justify-between">
         <div>
