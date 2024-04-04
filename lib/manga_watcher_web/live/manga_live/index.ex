@@ -42,7 +42,7 @@ defmodule MangaWatcherWeb.MangaLive.Index do
 
   defp apply_action(socket, :index, _params) do
     socket
-    |> assign(:page_title, "Listing Mangas")
+    |> assign(:page_title, "Manga Watcher")
     |> assign(:manga, nil)
   end
 

@@ -21,7 +21,7 @@ defmodule MangaWatcherWeb.MangaLiveTest do
     test "lists all mangas", %{conn: conn} do
       {:ok, _index_live, html} = live(conn, ~p"/")
 
-      assert html =~ "Listing Mangas"
+      assert html =~ "Manga Watcher"
     end
 
     test "saves new manga", %{conn: conn} do
