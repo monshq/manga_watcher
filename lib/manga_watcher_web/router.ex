@@ -23,12 +23,6 @@ defmodule MangaWatcherWeb.Router do
   scope "/", MangaWatcherWeb do
     pipe_through :browser
 
-    # get "/", SeriesController, :home
-    get "/series/new", SeriesController, :new
-    post "/series", SeriesController, :create
-    patch "/series/update", SeriesController, :update_all
-    patch "/series/:id/read", SeriesController, :read
-
     live "/", MangaLive.Index, :index
     live "/mangas", MangaLive.Index, :index
     live "/mangas/:id/edit", MangaLive.Index, :edit
