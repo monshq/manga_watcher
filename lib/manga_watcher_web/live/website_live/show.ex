@@ -1,7 +1,7 @@
 defmodule MangaWatcherWeb.WebsiteLive.Show do
   use MangaWatcherWeb, :live_view
 
-  alias MangaWatcher.MangaSources
+  alias MangaWatcher.Series
 
   @impl true
   def mount(_params, _session, socket) do
@@ -13,7 +13,7 @@ defmodule MangaWatcherWeb.WebsiteLive.Show do
     {:noreply,
      socket
      |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> assign(:website, MangaSources.get_website!(id))}
+     |> assign(:website, Series.get_website!(id))}
   end
 
   defp page_title(:show), do: "Show Website"

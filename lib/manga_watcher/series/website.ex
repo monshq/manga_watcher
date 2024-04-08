@@ -1,13 +1,15 @@
-defmodule MangaWatcher.MangaSources.Website do
+defmodule MangaWatcher.Series.Website do
   use Ecto.Schema
   import Ecto.Changeset
 
   alias MangaWatcher.Utils
+  alias MangaWatcher.Repo
 
   schema "websites" do
     field :base_url, :string
     field :title_regex, :string
     field :links_regex, :string
+    field :preview_regex, :string
 
     timestamps()
   end
@@ -18,15 +20,15 @@ defmodule MangaWatcher.MangaSources.Website do
     |> cast(attrs, [:base_url, :title_regex, :links_regex])
     |> validate_required([:base_url, :title_regex, :links_regex])
     |> normalize_url()
-    |> unsafe_validate_unique(:url, Repo)
-    |> unique_constraint(:url)
+    |> unsafe_validate_unique(:base_url, Repo)
+    |> unique_constraint(:base_url)
   end
 
   defp normalize_url(changeset) do
-    url = changeset |> get_field(:url)
+    url = changeset |> get_field(:base_url)
 
     if url do
-      cast(changeset, %{url: Utils.normalize_url(url)}, [:url])
+      cast(changeset, %{base_url: Utils.normalize_url(url)}, [:base_url])
     else
       changeset
     end

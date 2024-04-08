@@ -81,4 +81,71 @@ defmodule MangaWatcher.SeriesTest do
       assert [manga] == Series.list_mangas()
     end
   end
+
+  describe "websites" do
+    alias MangaWatcher.Series.Website
+
+    import MangaWatcher.SeriesFixtures
+
+    @invalid_attrs %{base_url: nil, title_regex: nil, links_regex: nil}
+
+    test "list_websites/0 returns all websites" do
+      website = website_fixture()
+      assert Series.list_websites() == [website]
+    end
+
+    test "get_website!/1 returns the website with given id" do
+      website = website_fixture()
+      assert Series.get_website!(website.id) == website
+    end
+
+    test "create_website/1 with valid data creates a website" do
+      valid_attrs = %{
+        base_url: "some base_url",
+        title_regex: "some title_regex",
+        links_regex: "some links_regex"
+      }
+
+      assert {:ok, %Website{} = website} = Series.create_website(valid_attrs)
+      assert website.base_url == "some base_url"
+      assert website.title_regex == "some title_regex"
+      assert website.links_regex == "some links_regex"
+    end
+
+    test "create_website/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Series.create_website(@invalid_attrs)
+    end
+
+    test "update_website/2 with valid data updates the website" do
+      website = website_fixture()
+
+      update_attrs = %{
+        base_url: "some updated base_url",
+        title_regex: "some updated title_regex",
+        links_regex: "some updated links_regex"
+      }
+
+      assert {:ok, %Website{} = website} = Series.update_website(website, update_attrs)
+      assert website.base_url == "some updated base_url"
+      assert website.title_regex == "some updated title_regex"
+      assert website.links_regex == "some updated links_regex"
+    end
+
+    test "update_website/2 with invalid data returns error changeset" do
+      website = website_fixture()
+      assert {:error, %Ecto.Changeset{}} = Series.update_website(website, @invalid_attrs)
+      assert website == Series.get_website!(website.id)
+    end
+
+    test "delete_website/1 deletes the website" do
+      website = website_fixture()
+      assert {:ok, %Website{}} = Series.delete_website(website)
+      assert_raise Ecto.NoResultsError, fn -> Series.get_website!(website.id) end
+    end
+
+    test "change_website/1 returns a website changeset" do
+      website = website_fixture()
+      assert %Ecto.Changeset{} = Series.change_website(website)
+    end
+  end
 end

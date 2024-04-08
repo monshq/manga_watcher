@@ -27,7 +27,7 @@ defmodule MangaWatcherWeb.MangaLiveTest do
     test "saves new manga", %{conn: conn} do
       {:ok, index_live, _html} = live(conn, ~p"/mangas")
 
-      assert index_live |> element("a", "Add manga") |> render_click() =~
+      assert index_live |> element("a", ~r{Add manga\n}) |> render_click() =~
                "New Manga"
 
       assert_patch(index_live, ~p"/mangas/new")

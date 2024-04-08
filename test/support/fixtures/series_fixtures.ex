@@ -17,4 +17,21 @@ defmodule MangaWatcher.SeriesFixtures do
 
     manga
   end
+
+  @doc """
+  Generate a website.
+  """
+  def website_fixture(attrs \\ %{}) do
+    {:ok, website} =
+      attrs
+      |> Enum.into(%{
+        base_url: "some base_url",
+        links_regex: "some links_regex",
+        title_regex: "some title_regex",
+        preview_regex: "some preview_regex"
+      })
+      |> MangaWatcher.Series.create_website()
+
+    website
+  end
 end

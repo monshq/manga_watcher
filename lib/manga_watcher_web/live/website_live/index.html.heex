@@ -1,10 +1,5 @@
 <.header>
   Listing Websites
-  <:actions>
-    <.link patch={~p"/websites/new"}>
-      <.button>New Website</.button>
-    </.link>
-  </:actions>
 </.header>
 
 <.table
@@ -15,6 +10,7 @@
   <:col :let={{_id, website}} label="Base url"><%= website.base_url %></:col>
   <:col :let={{_id, website}} label="Title regex"><%= website.title_regex %></:col>
   <:col :let={{_id, website}} label="Links regex"><%= website.links_regex %></:col>
+  <:col :let={{_id, website}} label="Preview regex"><%= website.preview_regex %></:col>
   <:action :let={{_id, website}}>
     <div class="sr-only">
       <.link navigate={~p"/websites/#{website}"}>Show</.link>
@@ -31,7 +27,12 @@
   </:action>
 </.table>
 
-<.modal :if={@live_action in [:new, :edit]} id="website-modal" show on_cancel={JS.patch(~p"/websites")}>
+<.modal
+  :if={@live_action in [:new, :edit]}
+  id="website-modal"
+  show
+  on_cancel={JS.patch(~p"/websites")}
+>
   <.live_component
     module={MangaWatcherWeb.WebsiteLive.FormComponent}
     id={@website.id || :new}

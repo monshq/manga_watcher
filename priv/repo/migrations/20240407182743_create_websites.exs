@@ -13,7 +13,7 @@ defmodule MangaWatcher.Repo.Migrations.CreateWebsites do
 
     create unique_index(:websites, [:base_url])
 
-    change table(:mangas) do
+    alter table(:mangas) do
       add :website_id, references(:websites)
     end
   end

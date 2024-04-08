@@ -6,13 +6,46 @@ defmodule MangaWatcher.Series do
   import Ecto.Query, warn: false
 
   alias MangaWatcher.Series.Tag
-  alias MangaWatcher.Manga.Updater
   alias MangaWatcher.Series.Manga
+  alias MangaWatcher.Series.Website
+  alias MangaWatcher.Manga.Updater
   alias MangaWatcher.Repo
 
   require Logger
 
   # SOURCES
+
+  def list_websites do
+    Repo.all(Website)
+  end
+
+  def get_website!(id), do: Repo.get!(Website, id)
+
+  def get_website_by_host(host) do
+    Website
+    |> where(fragment("base_url ilike '%?%'", ^host))
+    |> Repo.one()
+  end
+
+  def create_website(attrs \\ %{}) do
+    %Website{}
+    |> Website.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def update_website(%Website{} = website, attrs) do
+    website
+    |> Website.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def change_website(%Website{} = website, attrs \\ %{}) do
+    Website.changeset(website, attrs)
+  end
+
+  def delete_website(%Website{} = website) do
+    Repo.delete(website)
+  end
 
   # TAGS
 

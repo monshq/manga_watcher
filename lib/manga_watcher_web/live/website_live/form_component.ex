@@ -1,7 +1,7 @@
 defmodule MangaWatcherWeb.WebsiteLive.FormComponent do
   use MangaWatcherWeb, :live_component
 
-  alias MangaWatcher.MangaSources
+  alias MangaWatcher.Series
 
   @impl true
   def render(assigns) do
@@ -9,7 +9,7 @@ defmodule MangaWatcherWeb.WebsiteLive.FormComponent do
     <div>
       <.header>
         <%= @title %>
-        <:subtitle>Use this form to manage website records in your database.</:subtitle>
+        <!-- <:subtitle>Use this form to manage website records in your database.</:subtitle> -->
       </.header>
 
       <.simple_form
@@ -22,6 +22,7 @@ defmodule MangaWatcherWeb.WebsiteLive.FormComponent do
         <.input field={@form[:base_url]} type="text" label="Base url" />
         <.input field={@form[:title_regex]} type="text" label="Title regex" />
         <.input field={@form[:links_regex]} type="text" label="Links regex" />
+        <.input field={@form[:preview_regex]} type="text" label="Preview regex" />
         <:actions>
           <.button phx-disable-with="Saving...">Save Website</.button>
         </:actions>
@@ -32,7 +33,7 @@ defmodule MangaWatcherWeb.WebsiteLive.FormComponent do
 
   @impl true
   def update(%{website: website} = assigns, socket) do
-    changeset = MangaSources.change_website(website)
+    changeset = Series.change_website(website)
 
     {:ok,
      socket
@@ -44,7 +45,7 @@ defmodule MangaWatcherWeb.WebsiteLive.FormComponent do
   def handle_event("validate", %{"website" => website_params}, socket) do
     changeset =
       socket.assigns.website
-      |> MangaSources.change_website(website_params)
+      |> Series.change_website(website_params)
       |> Map.put(:action, :validate)
 
     {:noreply, assign_form(socket, changeset)}
@@ -55,7 +56,7 @@ defmodule MangaWatcherWeb.WebsiteLive.FormComponent do
   end
 
   defp save_website(socket, :edit, website_params) do
-    case MangaSources.update_website(socket.assigns.website, website_params) do
+    case Series.update_website(socket.assigns.website, website_params) do
       {:ok, website} ->
         notify_parent({:saved, website})
 
@@ -70,7 +71,7 @@ defmodule MangaWatcherWeb.WebsiteLive.FormComponent do
   end
 
   defp save_website(socket, :new, website_params) do
-    case MangaSources.create_website(website_params) do
+    case Series.create_website(website_params) do
       {:ok, website} ->
         notify_parent({:saved, website})
 

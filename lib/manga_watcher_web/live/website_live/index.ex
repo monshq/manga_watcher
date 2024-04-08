@@ -1,12 +1,12 @@
 defmodule MangaWatcherWeb.WebsiteLive.Index do
   use MangaWatcherWeb, :live_view
 
-  alias MangaWatcher.MangaSources
-  alias MangaWatcher.MangaSources.Website
+  alias MangaWatcher.Series
+  alias MangaWatcher.Series.Website
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :websites, MangaSources.list_websites())}
+    {:ok, stream(socket, :websites, Series.list_websites())}
   end
 
   @impl true
@@ -17,7 +17,7 @@ defmodule MangaWatcherWeb.WebsiteLive.Index do
   defp apply_action(socket, :edit, %{"id" => id}) do
     socket
     |> assign(:page_title, "Edit Website")
-    |> assign(:website, MangaSources.get_website!(id))
+    |> assign(:website, Series.get_website!(id))
   end
 
   defp apply_action(socket, :new, _params) do
@@ -39,8 +39,8 @@ defmodule MangaWatcherWeb.WebsiteLive.Index do
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
-    website = MangaSources.get_website!(id)
-    {:ok, _} = MangaSources.delete_website(website)
+    website = Series.get_website!(id)
+    {:ok, _} = Series.delete_website(website)
 
     {:noreply, stream_delete(socket, :websites, website)}
   end
