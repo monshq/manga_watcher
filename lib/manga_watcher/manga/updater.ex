@@ -46,8 +46,10 @@ defmodule MangaWatcher.Manga.Updater do
 
   def parse_attrs(manga_attrs) do
     with {:ok, url} <- Map.fetch(manga_attrs, :url),
+         {:ok, website} <- Series.get_website_for_url(url),
          {:ok, html_content} <- @downloader.download(url),
-         {:ok, attrs} <- PageParser.parse(html_content),
+         {:ok, attrs} <- PageParser.parse(html_content, website),
+         :ok <- Logger.info("found following attrs for manga: #{inspect(attrs)}"),
          {:ok, preview} <-
            store_preview(attrs[:preview], manga_attrs[:preview], attrs[:name], url) do
       {:ok, manga_attrs |> Map.merge(attrs) |> Map.merge(%{preview: preview})}

@@ -11,7 +11,7 @@ defmodule MangaWatcher.SeriesFixtures do
     {:ok, manga} =
       attrs
       |> Enum.into(%{
-        url: "asdf.com/qwerty"
+        url: "http://mangasource.com/qwerty"
       })
       |> MangaWatcher.Series.create_manga()
 
@@ -25,10 +25,10 @@ defmodule MangaWatcher.SeriesFixtures do
     {:ok, website} =
       attrs
       |> Enum.into(%{
-        base_url: "some base_url",
-        links_regex: "some links_regex",
-        title_regex: "some title_regex",
-        preview_regex: "some preview_regex"
+        base_url: "http://mangasource.com",
+        links_regex: "#chapterlist a",
+        title_regex: "h1.entry-title",
+        preview_regex: ".thumbook img"
       })
       |> MangaWatcher.Series.create_website()
 

@@ -10,6 +10,11 @@ defmodule MangaWatcher.SeriesTest do
 
     @invalid_attrs %{last_chapter: nil, last_read_chapter: nil, name: nil, url: nil}
 
+    setup do
+      website_fixture()
+      :ok
+    end
+
     test "list_mangas/0 returns all mangas" do
       manga = manga_fixture()
       assert Series.list_mangas() == [manga]
@@ -21,17 +26,17 @@ defmodule MangaWatcher.SeriesTest do
     end
 
     test "create_manga/1 with valid data creates a manga" do
-      valid_attrs = %{url: "http://new/url"}
+      valid_attrs = %{url: "http://mangasource.com/url"}
 
       assert {:ok, %Manga{} = manga} = Series.create_manga(valid_attrs)
-      assert manga.url == "http://new/url"
+      assert manga.url == "http://mangasource.com/url"
     end
 
     test "create_manga/1 with tags creates a manga and tags" do
-      valid_attrs = %{url: "http://new/url", tags: "shoujo-ai, yuri"}
+      valid_attrs = %{url: "http://mangasource.com/url", tags: "shoujo-ai, yuri"}
 
       assert {:ok, %Manga{} = manga} = Series.create_manga(valid_attrs)
-      assert manga.url == "http://new/url"
+      assert manga.url == "http://mangasource.com/url"
       manga = Repo.preload(manga, :tags)
       assert length(manga.tags) == 2
     end
@@ -101,15 +106,17 @@ defmodule MangaWatcher.SeriesTest do
 
     test "create_website/1 with valid data creates a website" do
       valid_attrs = %{
-        base_url: "some base_url",
+        base_url: "http://some.base.url/without_path",
         title_regex: "some title_regex",
-        links_regex: "some links_regex"
+        links_regex: "some links_regex",
+        preview_regex: "some preview_regex"
       }
 
       assert {:ok, %Website{} = website} = Series.create_website(valid_attrs)
-      assert website.base_url == "some base_url"
+      assert website.base_url == "some.base.url"
       assert website.title_regex == "some title_regex"
       assert website.links_regex == "some links_regex"
+      assert website.preview_regex == "some preview_regex"
     end
 
     test "create_website/1 with invalid data returns error changeset" do
@@ -120,13 +127,13 @@ defmodule MangaWatcher.SeriesTest do
       website = website_fixture()
 
       update_attrs = %{
-        base_url: "some updated base_url",
+        base_url: "http://some.updated.url/no_path",
         title_regex: "some updated title_regex",
         links_regex: "some updated links_regex"
       }
 
       assert {:ok, %Website{} = website} = Series.update_website(website, update_attrs)
-      assert website.base_url == "some updated base_url"
+      assert website.base_url == "some.updated.url"
       assert website.title_regex == "some updated title_regex"
       assert website.links_regex == "some updated links_regex"
     end

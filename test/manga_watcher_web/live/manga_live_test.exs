@@ -6,11 +6,12 @@ defmodule MangaWatcherWeb.MangaLiveTest do
 
   alias MangaWatcher.Series
 
-  @create_attrs %{url: "http://some.url", tags: "shoujo-ai, yuri"}
-  @update_attrs %{url: "http://some.url", tags: "seinen"}
+  @create_attrs %{url: "http://mangasource.com", tags: "shoujo-ai, yuri"}
+  @update_attrs %{url: "http://mangasource.com", tags: "seinen"}
   @invalid_attrs %{url: ""}
 
   defp create_manga(_) do
+    _website = website_fixture()
     manga = manga_fixture()
     %{manga: manga}
   end

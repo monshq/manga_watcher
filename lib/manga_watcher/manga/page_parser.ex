@@ -1,26 +1,15 @@
 defmodule MangaWatcher.Manga.PageParser do
-  @titles [".main-head h1", "h1.entry-title"]
-  @links [".chapter-list a", "#chapterlist a"]
-  @previews ["figure.cover img", ".thumbook img"]
+  alias MangaWatcher.Series.Website
 
-  @spec parse(binary) :: {:ok, map} | {:error, atom}
-  def parse(page) do
+  @spec parse(binary, Website.t()) :: {:ok, map} | {:error, atom}
+  def parse(page, %Website{} = website) do
     {:ok, doc} = Floki.parse_document(page)
 
-    name =
-      Enum.find_value(@titles, fn el ->
-        Floki.find(doc, el) |> Floki.text() |> wrap_empty()
-      end)
+    name = Floki.find(doc, website.title_regex) |> Floki.text()
 
-    preview =
-      Enum.find_value(@previews, fn el ->
-        Floki.attribute(doc, el, "src") |> first_or_false()
-      end)
+    preview = Floki.attribute(doc, website.preview_regex, "src") |> first_or_nil()
 
-    links =
-      Enum.find_value(@links, [], fn el ->
-        Floki.attribute(doc, el, "href") |> wrap_empty()
-      end)
+    links = Floki.attribute(doc, website.links_regex, "href")
 
     last_chapter =
       links
@@ -35,14 +24,13 @@ defmodule MangaWatcher.Manga.PageParser do
     res = %{name: name, last_chapter: last_chapter, preview: preview}
     {:ok, res}
   rescue
+    Enum.EmptyError ->
+      {:error, "could not find any chapter links"}
+
     e ->
       {:error, e}
   end
 
-  defp wrap_empty(val) when val == "", do: false
-  defp wrap_empty(val) when val == [], do: false
-  defp wrap_empty(val), do: val
-
-  defp first_or_false([_] = l), do: hd(l)
-  defp first_or_false(_), do: false
+  defp first_or_nil([_] = l), do: hd(l)
+  defp first_or_nil(_), do: nil
 end

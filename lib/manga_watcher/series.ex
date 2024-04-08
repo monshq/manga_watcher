@@ -21,10 +21,20 @@ defmodule MangaWatcher.Series do
 
   def get_website!(id), do: Repo.get!(Website, id)
 
-  def get_website_by_host(host) do
-    Website
-    |> where(fragment("base_url ilike '%?%'", ^host))
-    |> Repo.one()
+  def get_website_for_url(url) do
+    uri = URI.parse(url)
+
+    website =
+      Website
+      |> where(base_url: ^uri.host)
+      |> Repo.one!()
+
+    {:ok, website}
+  rescue
+    e ->
+      host = URI.parse(url).host
+      Logger.warning("could not get parser for website #{host}: #{inspect(e)}")
+      {:error, "could not get parser for website #{host}"}
   end
 
   def create_website(attrs \\ %{}) do
