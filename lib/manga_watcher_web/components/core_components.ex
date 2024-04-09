@@ -19,6 +19,8 @@ defmodule MangaWatcherWeb.CoreComponents do
   alias Phoenix.LiveView.JS
   import MangaWatcherWeb.Gettext
 
+  embed_templates "partials/*"
+
   @doc """
   Renders a modal.
 

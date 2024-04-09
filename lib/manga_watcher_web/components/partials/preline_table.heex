@@ -1,0 +1,85 @@
+<div class="max-w-[85rem] px-4 py-10 sm:px-6 lg:px-8 lg:py-14 mx-auto">
+  <div class="flex flex-col">
+    <div class="-m-1.5 overflow-x-auto">
+      <div class="p-1.5 min-w-full inline-block align-middle">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-slate-900 dark:border-gray-700">
+          <!-- Header -->
+          <div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200 dark:border-gray-700">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">
+                <%= @title %>
+              </h2>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                <%= @description %>
+              </p>
+            </div>
+
+            <div>
+              <div class="inline-flex gap-x-2">
+                <a
+                  class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-primary text-primary disabled:opacity-50 disabled:pointer-events-none"
+                  href={@create_url}
+                >
+                  <.icon name="hero-plus" /> Create
+                </a>
+              </div>
+            </div>
+          </div>
+          <!-- End Header -->
+
+          <!-- Table -->
+          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 overflow-x-scroll table-auto">
+            <thead class="bg-gray-50 dark:bg-slate-900">
+              <tr>
+                <th :for={col <- @col} scope="col" class="px-6 py-3 text-start">
+                  <div class="flex items-center gap-x-2">
+                    <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-200">
+                      <%= col.label %>
+                    </span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+
+            <tbody
+              id={@id}
+              class="divide-y divide-gray-200 dark:divide-gray-700"
+              phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
+            >
+              <tr
+                :for={row <- @rows}
+                phx-click={@row_click && @row_click.(row)}
+                class={[
+                  "bg-white hover:bg-gray-50 dark:bg-slate-900 dark:hover:bg-slate-800",
+                  @row_click && "hover:cursor-pointer"
+                ]}
+              >
+                <td :for={col <- @col} class="size-px whitespace-nowrap">
+                  <button type="button" class="block" data-hs-overlay="#hs-ai-invoice-modal">
+                    <span class="block px-6 py-2">
+                      <span class="font-mono text-sm text-primary">
+                        <%= render_slot(col, Function.identity(row)) %>
+                      </span>
+                    </span>
+                  </button>
+                </td>
+                <td :if={@action != []} class="relative w-14 p-0 pr-5">
+                  <div class="relative whitespace-nowrap py-4 text-right text-sm font-medium">
+                    <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-zinc-50 sm:rounded-r-xl" />
+                    <span
+                      :for={action <- @action}
+                      class="relative ml-4 font-semibold leading-6 text-primary"
+                    >
+                      <%= render_slot(action, row) %>
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- End Table -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
