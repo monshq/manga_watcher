@@ -413,21 +413,6 @@ defmodule MangaWatcherWeb.CoreComponents do
     """
   end
 
-  @doc """
-  Renders a header with title.
-  """
-  attr :class, :string, default: nil
-
-  slot :inner_block, required: true
-
-  def header(assigns) do
-    ~H"""
-    <header>
-      <%= render_slot(@inner_block) %>
-    </header>
-    """
-  end
-
   @doc ~S"""
   Renders a table with generic styling.
 

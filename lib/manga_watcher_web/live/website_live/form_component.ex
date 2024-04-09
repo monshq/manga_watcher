@@ -7,10 +7,9 @@ defmodule MangaWatcherWeb.WebsiteLive.FormComponent do
   def render(assigns) do
     ~H"""
     <div>
-      <.header>
+      <header>
         <%= @title %>
-        <!-- <:subtitle>Use this form to manage website records in your database.</:subtitle> -->
-      </.header>
+      </header>
 
       <.simple_form
         for={@form}
