@@ -22,7 +22,14 @@ defmodule MangaWatcher.Utils do
   end
 
   def normalize_host(nil), do: nil
-  def normalize_host(url) when is_binary(url), do: URI.parse(url).host
+
+  def normalize_host(url) when is_binary(url) do
+    if String.match?(url, ~r/http.*/) do
+      URI.parse(url).host
+    else
+      URI.parse("http://#{url}").host
+    end
+  end
 
   defp wrap(b) when is_binary(b), do: b
   defp wrap(_), do: ""

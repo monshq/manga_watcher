@@ -25,14 +25,12 @@ defmodule MangaWatcherWeb.Router do
 
     live "/", MangaLive.Index, :index
     live "/mangas", MangaLive.Index, :index
-    live "/mangas/:id/edit", MangaLive.Index, :edit
     live "/mangas/new", MangaLive.Index, :new
-    live "/mangas/:id", MangaLive.Show, :show
+    live "/mangas/:id/edit", MangaLive.Index, :edit
 
     live "/websites", WebsiteLive.Index, :index
     live "/websites/new", WebsiteLive.Index, :new
     live "/websites/:id/edit", WebsiteLive.Index, :edit
-    live "/websites/:id", WebsiteLive.Show, :show
 
     import Phoenix.LiveDashboard.Router
     live_dashboard "/dashboard", metrics: MangaWatcherWeb.Telemetry

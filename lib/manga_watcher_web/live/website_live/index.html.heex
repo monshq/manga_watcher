@@ -1,7 +1,7 @@
 <.preline_table
   id="websites"
   rows={@streams.websites}
-  row_click={fn {_id, website} -> JS.navigate(~p"/websites/#{website}") end}
+  row_click={fn {_id, website} -> JS.navigate(~p"/websites/#{website}/edit") end}
   title="Websites"
   description="List of manga websites"
   create_url={~p"/websites/new"}
@@ -11,9 +11,6 @@
   <:col :let={{_id, website}} label="Links regex"><%= website.links_regex %></:col>
   <:col :let={{_id, website}} label="Preview regex"><%= website.preview_regex %></:col>
   <:action :let={{_id, website}}>
-    <div class="sr-only">
-      <.link navigate={~p"/websites/#{website}"}>Show</.link>
-    </div>
     <.link patch={~p"/websites/#{website}/edit"}>Edit</.link>
   </:action>
   <:action :let={{id, website}}>

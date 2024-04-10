@@ -87,36 +87,4 @@ defmodule MangaWatcherWeb.MangaLiveTest do
       refute has_element?(index_live, "#mangas-#{manga.id}")
     end
   end
-
-  # describe "Show" do
-  #   setup [:create_manga]
-  #
-  #   test "displays manga", %{conn: conn, manga: manga} do
-  #     {:ok, _show_live, html} = live(conn, ~p"/mangas/#{manga}")
-  #
-  #     assert html =~ "Show Manga"
-  #   end
-  #
-  #   test "updates manga within modal", %{conn: conn, manga: manga} do
-  #     {:ok, show_live, _html} = live(conn, ~p"/mangas/#{manga}")
-  #
-  #     assert show_live |> element("a", "Edit") |> render_click() =~
-  #              "Edit Manga"
-  #
-  #     assert_patch(show_live, ~p"/mangas/#{manga}/show/edit")
-  #
-  #     assert show_live
-  #            |> form("#manga-form", manga: @invalid_attrs)
-  #            |> render_change() =~ "can&#39;t be blank"
-  #
-  #     assert show_live
-  #            |> form("#manga-form", manga: @update_attrs)
-  #            |> render_submit()
-  #
-  #     assert_patch(show_live, ~p"/mangas/#{manga}")
-  #
-  #     html = render(show_live)
-  #     assert html =~ "Manga updated successfully"
-  #   end
-  # end
 end
