@@ -4,8 +4,8 @@
       <div class="p-1.5 min-w-full inline-block align-middle">
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-slate-900 dark:border-gray-700">
           <!-- Header -->
-          <div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200 dark:border-gray-700">
-            <div>
+          <div class="px-6 py-4 gap-3 flex flex-wrap justify-between items-center border-b border-gray-200 dark:border-gray-700">
+            <div class="min-w-[300px]">
               <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">
                 <%= @title %>
               </h2>
@@ -28,10 +28,14 @@
           <!-- End Header -->
 
           <!-- Table -->
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 overflow-x-scroll table-auto">
+          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 overflow-x-scroll lg:table-auto table-fixed">
             <thead class="bg-gray-50 dark:bg-slate-900">
               <tr>
-                <th :for={col <- @col} scope="col" class="px-6 py-3 text-start">
+                <th
+                  :for={col <- @col}
+                  scope="col"
+                  class="px-6 py-3 text-start lg:table-cell hidden"
+                >
                   <div class="flex items-center gap-x-2">
                     <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-200">
                       <%= col.label %>
@@ -58,8 +62,16 @@
                   @row_click && "hover:cursor-pointer"
                 ]}
               >
-                <td :for={col <- @col} class="size-px whitespace-nowrap">
-                  <button type="button" class="block" data-hs-overlay="#hs-ai-invoice-modal">
+                <td
+                  :for={col <- @col}
+                  class="size-px whitespace-nowrap lg:table-cell grid grid-cols-[15ch_auto] w-full"
+                >
+                  <div class="lg:hidden block p-2 font-medium text-primary"><%= col.label %></div>
+                  <button
+                    type="button"
+                    class="block text-left"
+                    data-hs-overlay="#hs-ai-invoice-modal"
+                  >
                     <span class="block px-6 py-2">
                       <span class="font-mono text-sm text-primary">
                         <%= render_slot(col, Function.identity(row)) %>
@@ -67,12 +79,11 @@
                     </span>
                   </button>
                 </td>
-                <td :if={@action != []} class="relative w-14 p-0 pr-5">
-                  <div class="relative whitespace-nowrap py-4 text-right text-sm font-medium">
-                    <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-zinc-50 sm:rounded-r-xl" />
+                <td :if={@action != []} class="relative lg:w-14 p-0 pr-5 lg:table-cell block">
+                  <div class="relative whitespace-nowrap py-4 lg:text-right text-sm font-medium">
                     <span
                       :for={action <- @action}
-                      class="relative ml-4 font-semibold leading-6 text-primary"
+                      class="relative lg:ml-4 ml-2.5 font-semibold leading-6 text-primary"
                     >
                       <%= render_slot(action, row) %>
                     </span>

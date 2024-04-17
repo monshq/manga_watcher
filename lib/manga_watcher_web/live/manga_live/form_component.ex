@@ -8,9 +8,9 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
   def render(assigns) do
     ~H"""
     <div>
-      <div class="text-primary font-medium text-xl">
+      <header class="text-primary font-medium text-xl">
         <%= @title %>
-      </div>
+      </header>
 
       <.simple_form
         for={@form}
