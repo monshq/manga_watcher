@@ -12,15 +12,13 @@ defmodule MangaWatcherWeb.MangaLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    assigns =
-      socket
-      |> assign(:mangas, Series.filter_mangas([], @default_exclude_tags))
-      |> assign(:tags, Series.list_tags())
-      |> assign(:include_tags, [])
-      |> assign(:exclude_tags, @default_exclude_tags)
-      |> assign(:refresh_state, AsyncResult.ok(:ok))
-
-    {:ok, assigns}
+    socket
+    |> assign(:mangas, Series.filter_mangas([], @default_exclude_tags))
+    |> assign(:tags, Series.list_tags())
+    |> assign(:include_tags, [])
+    |> assign(:exclude_tags, @default_exclude_tags)
+    |> assign(:refresh_state, AsyncResult.ok(:ok))
+    |> then(&{:ok, &1})
   end
 
   @impl true
@@ -48,10 +46,10 @@ defmodule MangaWatcherWeb.MangaLive.Index do
 
   @impl true
   def handle_info({MangaWatcherWeb.MangaLive.FormComponent, {:saved, _manga}}, socket) do
-    {:noreply,
-     socket
-     |> assign(:mangas, list_mangas_with_current_filter(socket.assigns))
-     |> assign(:tags, Series.list_tags())}
+    socket
+    |> assign_mangas_with_current_filter()
+    |> assign(:tags, Series.list_tags())
+    |> then(&{:noreply, &1})
   end
 
   @impl true
@@ -59,38 +57,34 @@ defmodule MangaWatcherWeb.MangaLive.Index do
     manga = Series.get_manga!(id)
     {:ok, _} = Series.delete_manga(manga)
 
-    socket =
-      socket
-      |> assign(:mangas, list_mangas_with_current_filter(socket.assigns))
-      |> push_patch(to: ~p/\//)
-
-    {:noreply, socket}
+    socket
+    |> assign_mangas_with_current_filter()
+    |> push_patch(to: ~p/\//)
+    |> then(&{:noreply, &1})
   end
 
   @impl true
   def handle_event("rescan", %{"id" => id}, socket) do
-    manga = Series.get_manga!(id)
-    Updater.update(manga)
+    Series.get_manga!(id) |> Updater.update()
 
-    socket =
-      socket
-      |> assign(:mangas, list_mangas_with_current_filter(socket.assigns))
-      |> push_patch(to: ~p/\//)
-
-    {:noreply, socket}
+    socket
+    |> assign_mangas_with_current_filter()
+    |> push_patch(to: ~p/\//)
+    |> then(&{:noreply, &1})
   end
 
   @impl true
   def handle_event("refresh_all_manga", _value, socket) do
-    assigns =
-      socket
-      |> start_async(:refresh_all_manga, fn ->
-        Series.refresh_all_manga()
-        list_mangas_with_current_filter(socket.assigns)
-      end)
-      |> assign(:refresh_state, AsyncResult.loading())
+    include_tags = socket.assigns.include_tags
+    exclude_tags = socket.assigns.exclude_tags
 
-    {:noreply, assigns}
+    socket
+    |> start_async(:refresh_all_manga, fn ->
+      Series.refresh_all_manga()
+      Series.filter_mangas(include_tags, exclude_tags)
+    end)
+    |> assign(:refresh_state, AsyncResult.loading())
+    |> then(&{:noreply, &1})
   end
 
   @impl true
@@ -132,37 +126,35 @@ defmodule MangaWatcherWeb.MangaLive.Index do
           exclude_tags
       end
 
-    socket =
-      socket
-      |> assign(:mangas, Series.filter_mangas(include_tags, exclude_tags))
-      |> assign(:include_tags, include_tags)
-      |> assign(:exclude_tags, exclude_tags)
-
-    {:noreply, socket}
+    socket
+    |> assign(:include_tags, include_tags)
+    |> assign(:exclude_tags, exclude_tags)
+    |> assign_mangas_with_current_filter()
+    |> then(&{:noreply, &1})
   end
 
   @impl true
   def handle_event("show_all", _value, socket) do
-    socket =
-      socket
-      |> assign(:mangas, Series.list_mangas())
-      |> assign(:exclude_tags, [])
-      |> assign(:include_tags, [])
-
-    {:noreply, socket}
+    socket
+    |> assign(:mangas, Series.list_mangas())
+    |> assign(:exclude_tags, [])
+    |> assign(:include_tags, [])
+    |> then(&{:noreply, &1})
   end
 
   @impl true
   def handle_async(:refresh_all_manga, {:ok, result}, socket) do
-    assigns =
-      socket
-      |> assign(:mangas, result)
-      |> assign(:refresh_state, AsyncResult.ok(:ok))
-
-    {:noreply, assigns}
+    socket
+    |> assign(:mangas, result)
+    |> assign(:refresh_state, AsyncResult.ok(:ok))
+    |> then(&{:noreply, &1})
   end
 
-  def list_mangas_with_current_filter(assigns) do
-    Series.filter_mangas(assigns.include_tags, assigns.exclude_tags)
+  def assign_mangas_with_current_filter(socket) do
+    assign(
+      socket,
+      :mangas,
+      Series.filter_mangas(socket.assigns.include_tags, socket.assigns.exclude_tags)
+    )
   end
 end
