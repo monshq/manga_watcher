@@ -1,5 +1,5 @@
-document.addEventListener('readystatechange', (_doc, _e) => {
-  button = document.querySelector('.hs-collapse-toggle')
+
+const bindNavbarHamburger = (button) => {
   navbar = document.querySelector('#navbar-collapse-with-animation')
 
   button.addEventListener('click', (_b, _e) => {
@@ -13,4 +13,6 @@ document.addEventListener('readystatechange', (_doc, _e) => {
       navbar.classList.add('hidden')
     }
   })
-})
+}
+
+export { bindNavbarHamburger };
