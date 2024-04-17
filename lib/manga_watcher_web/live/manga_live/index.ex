@@ -13,7 +13,7 @@ defmodule MangaWatcherWeb.MangaLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     socket
-    |> assign(:mangas, Series.filter_mangas([], @default_exclude_tags))
+    |> stream(:mangas, Series.filter_mangas([], @default_exclude_tags))
     |> assign(:tags, Series.list_tags())
     |> assign(:include_tags, [])
     |> assign(:exclude_tags, @default_exclude_tags)
@@ -45,9 +45,9 @@ defmodule MangaWatcherWeb.MangaLive.Index do
   end
 
   @impl true
-  def handle_info({MangaWatcherWeb.MangaLive.FormComponent, {:saved, _manga}}, socket) do
+  def handle_info({MangaWatcherWeb.MangaLive.FormComponent, {:saved, manga}}, socket) do
     socket
-    |> assign_mangas_with_current_filter()
+    |> stream_insert(:mangas, manga)
     |> assign(:tags, Series.list_tags())
     |> then(&{:noreply, &1})
   end
@@ -58,17 +58,17 @@ defmodule MangaWatcherWeb.MangaLive.Index do
     {:ok, _} = Series.delete_manga(manga)
 
     socket
-    |> assign_mangas_with_current_filter()
+    |> stream_delete(:mangas, manga)
     |> push_patch(to: ~p/\//)
     |> then(&{:noreply, &1})
   end
 
   @impl true
   def handle_event("rescan", %{"id" => id}, socket) do
-    Series.get_manga!(id) |> Updater.update()
+    manga = Series.get_manga!(id) |> Updater.update()
 
     socket
-    |> assign_mangas_with_current_filter()
+    |> stream_insert(:mangas, manga)
     |> push_patch(to: ~p/\//)
     |> then(&{:noreply, &1})
   end
@@ -127,16 +127,16 @@ defmodule MangaWatcherWeb.MangaLive.Index do
       end
 
     socket
+    |> stream(:mangas, Series.filter_mangas(include_tags, exclude_tags), reset: true)
     |> assign(:include_tags, include_tags)
     |> assign(:exclude_tags, exclude_tags)
-    |> assign_mangas_with_current_filter()
     |> then(&{:noreply, &1})
   end
 
   @impl true
   def handle_event("show_all", _value, socket) do
     socket
-    |> assign(:mangas, Series.list_mangas())
+    |> stream(:mangas, Series.list_mangas(), reset: true)
     |> assign(:exclude_tags, [])
     |> assign(:include_tags, [])
     |> then(&{:noreply, &1})
@@ -145,16 +145,8 @@ defmodule MangaWatcherWeb.MangaLive.Index do
   @impl true
   def handle_async(:refresh_all_manga, {:ok, result}, socket) do
     socket
-    |> assign(:mangas, result)
+    |> stream(:mangas, result, reset: true)
     |> assign(:refresh_state, AsyncResult.ok(:ok))
     |> then(&{:noreply, &1})
-  end
-
-  def assign_mangas_with_current_filter(socket) do
-    assign(
-      socket,
-      :mangas,
-      Series.filter_mangas(socket.assigns.include_tags, socket.assigns.exclude_tags)
-    )
   end
 end

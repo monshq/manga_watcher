@@ -36,11 +36,15 @@ defmodule MangaWatcher.Manga.Updater do
   def update(manga) do
     case manga |> Map.from_struct() |> parse_attrs() do
       {:ok, parsed_attrs} ->
-        {:ok, _} = Series.update_manga(manga, Map.merge(parsed_attrs, %{failed_updates: 0}))
+        {:ok, updated_manga} =
+          Series.update_manga(manga, Map.merge(parsed_attrs, %{failed_updates: 0}))
+
+        updated_manga
 
       {:error, reason} ->
         Logger.error("could not update manga #{manga.name}: #{reason}")
         {:ok, _} = Series.update_manga(manga, %{failed_updates: manga.failed_updates + 1})
+        manga
     end
   end
 

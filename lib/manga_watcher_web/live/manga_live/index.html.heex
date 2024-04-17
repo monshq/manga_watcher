@@ -62,11 +62,11 @@
           <% end %>
         </div>
 
-        <section class="min-w-full card-section">
-          <%= for manga <- @mangas do %>
+        <section class="min-w-full card-section" id="mangas" phx-update="stream">
+          <%= for {id, manga} <- @streams.mangas do %>
             <.live_component
               module={MangaWatcherWeb.MangaLive.MangaComponent}
-              id={manga.id}
+              id={id}
               title={@page_title}
               action={@live_action}
               manga={manga}
