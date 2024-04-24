@@ -80,18 +80,24 @@ defmodule MangaWatcher.Series do
   end
 
   def filter_mangas(include_tags, exclude_tags) do
+    exclude_query =
+      from m in Manga,
+        join: t in assoc(m, :tags),
+        where: t.name in ^exclude_tags,
+        select: m.id
+
     query =
       case include_tags do
         [] ->
           from m in Manga,
             left_join: t in assoc(m, :tags),
-            where: is_nil(t.name) or t.name not in ^exclude_tags,
+            where: m.id not in subquery(exclude_query),
             group_by: m.id
 
         _ ->
           from m in Manga,
             left_join: t in assoc(m, :tags),
-            where: is_nil(t.name) or t.name not in ^exclude_tags,
+            where: m.id not in subquery(exclude_query),
             where: t.name in ^include_tags,
             group_by: m.id
       end

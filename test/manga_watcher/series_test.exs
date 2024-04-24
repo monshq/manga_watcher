@@ -15,6 +15,39 @@ defmodule MangaWatcher.SeriesTest do
       :ok
     end
 
+    def ids(records) do
+      records |> Enum.map(& &1.id) |> Enum.sort()
+    end
+
+    test "filter_mangas/2 returns all mangas with empty input" do
+      manga = manga_fixture()
+      assert Series.filter_mangas([], []) == [manga]
+    end
+
+    test "filter_mangas/2 excludes correct tags" do
+      _m1 = manga_fixture(%{url: "http://mangasource.com/1", tags: "seinen, school"})
+      _m2 = manga_fixture(%{url: "http://mangasource.com/2", tags: "shoujo"})
+      m3 = manga_fixture(%{url: "http://mangasource.com/3", tags: "josei"})
+
+      assert ids(Series.filter_mangas([], ["seinen", "shoujo"])) == [m3.id]
+    end
+
+    test "filter_mangas/2 includes correct tags" do
+      m1 = manga_fixture(%{url: "http://mangasource.com/1", tags: "seinen, school"})
+      m2 = manga_fixture(%{url: "http://mangasource.com/2", tags: "shoujo"})
+      _m3 = manga_fixture(%{url: "http://mangasource.com/3", tags: "josei"})
+
+      assert ids(Series.filter_mangas(["seinen", "shoujo"], [])) == [m1.id, m2.id]
+    end
+
+    test "filter_mangas/2 correctly mixes include and exclude" do
+      _m1 = manga_fixture(%{url: "http://mangasource.com/1", tags: "seinen, school"})
+      m2 = manga_fixture(%{url: "http://mangasource.com/2", tags: "shoujo"})
+      _m3 = manga_fixture(%{url: "http://mangasource.com/3", tags: "josei"})
+
+      assert ids(Series.filter_mangas(["seinen", "shoujo"], ["school", "josei"])) == [m2.id]
+    end
+
     test "list_mangas/0 returns all mangas" do
       manga = manga_fixture()
       assert Series.list_mangas() == [manga]
