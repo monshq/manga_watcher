@@ -37,9 +37,6 @@ defmodule MangaWatcherWeb.Router do
       live "/websites/new", WebsiteLive.Index, :new
       live "/websites/:id/edit", WebsiteLive.Index, :edit
 
-      live "/users/confirm/:token", UserConfirmationLive, :edit
-      live "/users/confirm", UserConfirmationInstructionsLive, :new
-
       delete "/users/log_out", UserSessionController, :delete
     end
 
@@ -78,7 +75,6 @@ defmodule MangaWatcherWeb.Router do
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{MangaWatcherWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/users/register", UserRegistrationLive, :new
       live "/users/log_in", UserLoginLive, :new
       live "/users/reset_password", UserForgotPasswordLive, :new
       live "/users/reset_password/:token", UserResetPasswordLive, :edit
