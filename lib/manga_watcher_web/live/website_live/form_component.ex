@@ -18,7 +18,7 @@ defmodule MangaWatcherWeb.WebsiteLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
-        <.input field={@form[:base_url]} type="text" label="Base url" />
+        <.input field={@form[:base_url]} type="text" label="Base url" autocomplete="off" />
         <.input field={@form[:title_regex]} type="text" label="Title regex" />
         <.input field={@form[:links_regex]} type="text" label="Links regex" />
         <.input field={@form[:preview_regex]} type="text" label="Preview regex" />

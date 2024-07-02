@@ -19,11 +19,11 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
         phx-change={if @action == :edit, do: "validate_change", else: "validate_create"}
         phx-submit="save"
       >
-        <.input field={@form[:url]} label="Url" />
+        <.input field={@form[:url]} label="Url" autocomplete="off" />
         <.input field={@form[:tags]} label="Tags" value={render_tags(@form)} />
         <%= if @action == :edit do %>
-          <.input field={@form[:name]} label="Name" />
-          <.input field={@form[:last_read_chapter]} label="Last read chapter" />
+          <.input field={@form[:name]} label="Name" autocomplete="off" />
+          <.input field={@form[:last_read_chapter]} label="Last read chapter" autocomplete="off" />
         <% end %>
         <:actions>
           <.button phx-disable-with="Saving...">Save Manga</.button>
