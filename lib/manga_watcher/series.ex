@@ -72,7 +72,7 @@ defmodule MangaWatcher.Series do
         tag -> tag
       end
 
-    Manga.add_tag(manga, tag) |> Repo.update!()
+    Manga.add_tag(manga, tag) |> Repo.update()
   end
 
   def list_mangas() do
