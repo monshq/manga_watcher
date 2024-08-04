@@ -10,14 +10,14 @@ defmodule MangaWatcherWeb.MangaLiveTest do
   @update_attrs %{url: "http://mangasource.com", tags: "seinen"}
   @invalid_attrs %{url: ""}
 
-  defp create_manga(_) do
+  defp create_manga(opts) do
     _website = website_fixture()
-    manga = manga_fixture()
+    manga = manga_for_user_fixture(opts.user)
     %{manga: manga}
   end
 
   describe "Index" do
-    setup [:create_manga]
+    setup [:register_and_log_in_user, :create_manga]
 
     test "lists all mangas", %{conn: conn} do
       {:ok, _index_live, html} = live(conn, ~p"/")

@@ -28,15 +28,6 @@ defmodule MangaWatcherWeb.Router do
 
     live_session :current_user,
       on_mount: [{MangaWatcherWeb.UserAuth, :mount_current_user}] do
-      live "/", MangaLive.Index, :index
-      live "/mangas", MangaLive.Index, :index
-      live "/mangas/new", MangaLive.Index, :new
-      live "/mangas/:id/edit", MangaLive.Index, :edit
-
-      live "/websites", WebsiteLive.Index, :index
-      live "/websites/new", WebsiteLive.Index, :new
-      live "/websites/:id/edit", WebsiteLive.Index, :edit
-
       delete "/users/log_out", UserSessionController, :delete
     end
 
@@ -90,6 +81,15 @@ defmodule MangaWatcherWeb.Router do
       on_mount: [{MangaWatcherWeb.UserAuth, :ensure_authenticated}] do
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+
+      live "/", MangaLive.Index, :index
+      live "/mangas", MangaLive.Index, :index
+      live "/mangas/new", MangaLive.Index, :new
+      live "/mangas/:id/edit", MangaLive.Index, :edit
+
+      live "/websites", WebsiteLive.Index, :index
+      live "/websites/new", WebsiteLive.Index, :new
+      live "/websites/:id/edit", WebsiteLive.Index, :edit
     end
   end
 end

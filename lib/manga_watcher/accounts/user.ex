@@ -2,11 +2,16 @@ defmodule MangaWatcher.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias MangaWatcher.Series.Manga
+  alias MangaWatcher.Series.UserManga
+
   schema "users" do
     field :email, :string
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :confirmed_at, :naive_datetime
+
+    many_to_many :mangas, Manga, join_through: UserManga, on_replace: :delete
 
     timestamps()
   end

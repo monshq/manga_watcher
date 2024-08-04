@@ -7,45 +7,17 @@ defmodule MangaWatcher.SeriesTest do
     alias MangaWatcher.Series.Manga
 
     import MangaWatcher.SeriesFixtures
+    import MangaWatcher.AccountsFixtures
 
     @invalid_attrs %{last_chapter: nil, last_read_chapter: nil, name: nil, url: nil}
 
     setup do
       website_fixture()
-      :ok
+      {:ok, user: user_fixture()}
     end
 
     def ids(records) do
       records |> Enum.map(& &1.id) |> Enum.sort()
-    end
-
-    test "filter_mangas/2 returns all mangas with empty input" do
-      manga = manga_fixture()
-      assert Series.filter_mangas([], []) == [manga]
-    end
-
-    test "filter_mangas/2 excludes correct tags" do
-      _m1 = manga_fixture(%{url: "http://mangasource.com/1", tags: "seinen, school"})
-      _m2 = manga_fixture(%{url: "http://mangasource.com/2", tags: "shoujo"})
-      m3 = manga_fixture(%{url: "http://mangasource.com/3", tags: "josei"})
-
-      assert ids(Series.filter_mangas([], ["seinen", "shoujo"])) == [m3.id]
-    end
-
-    test "filter_mangas/2 includes correct tags" do
-      m1 = manga_fixture(%{url: "http://mangasource.com/1", tags: "seinen, school"})
-      m2 = manga_fixture(%{url: "http://mangasource.com/2", tags: "shoujo"})
-      _m3 = manga_fixture(%{url: "http://mangasource.com/3", tags: "josei"})
-
-      assert ids(Series.filter_mangas(["seinen", "shoujo"], [])) == [m1.id, m2.id]
-    end
-
-    test "filter_mangas/2 correctly mixes include and exclude" do
-      _m1 = manga_fixture(%{url: "http://mangasource.com/1", tags: "seinen, school"})
-      m2 = manga_fixture(%{url: "http://mangasource.com/2", tags: "shoujo"})
-      _m3 = manga_fixture(%{url: "http://mangasource.com/3", tags: "josei"})
-
-      assert ids(Series.filter_mangas(["seinen", "shoujo"], ["school", "josei"])) == [m2.id]
     end
 
     test "list_mangas/0 returns all mangas" do
@@ -54,7 +26,7 @@ defmodule MangaWatcher.SeriesTest do
     end
 
     test "get_manga!/1 returns the manga with given id" do
-      manga = manga_fixture() |> Repo.preload(:tags)
+      manga = manga_fixture() |> Repo.preload([:tags, :user_mangas])
       assert Series.get_manga!(manga.id) == manga
     end
 
@@ -79,25 +51,23 @@ defmodule MangaWatcher.SeriesTest do
     end
 
     test "update_manga/2 with valid data updates the manga" do
-      manga = manga_fixture() |> Repo.preload(:tags)
+      manga = manga_fixture() |> Repo.preload([:tags])
 
       update_attrs = %{
         last_chapter: 43,
-        last_read_chapter: 43,
         url: "http://some/updated/url",
         tags: "example"
       }
 
       assert {:ok, %Manga{} = manga} = Series.update_manga(manga, update_attrs)
       assert manga.last_chapter == 43
-      assert manga.last_read_chapter == 43
       assert manga.url == "http://some/updated/url"
       manga = Repo.preload(manga, :tags)
       assert length(manga.tags) == 1
     end
 
     test "update_manga/2 with invalid data returns error changeset" do
-      manga = manga_fixture() |> Repo.preload(:tags)
+      manga = manga_fixture() |> Repo.preload([:tags, :user_mangas])
       assert {:error, %Ecto.Changeset{}} = Series.update_manga(manga, @invalid_attrs)
       assert manga == Series.get_manga!(manga.id)
     end

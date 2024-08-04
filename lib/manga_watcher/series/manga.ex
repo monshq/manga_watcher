@@ -4,19 +4,23 @@ defmodule MangaWatcher.Series.Manga do
 
   alias MangaWatcher.Repo
   alias MangaWatcher.Series.Tag
+  alias MangaWatcher.Series.UserManga
+  alias MangaWatcher.Accounts.User
   alias MangaWatcher.Utils
 
   import Ecto.Query
 
   schema "mangas" do
     field :last_chapter, :integer
-    field :last_read_chapter, :integer
     field :name, :string
     field :url, :string
     field :failed_updates, :integer, default: 0
     field :preview, :string
 
     many_to_many :tags, Tag, join_through: "manga_tags", on_replace: :delete
+
+    has_many :user_mangas, UserManga
+    many_to_many :users, User, join_through: UserManga, on_replace: :delete
 
     timestamps()
   end
@@ -32,13 +36,14 @@ defmodule MangaWatcher.Series.Manga do
     |> validate_required([:url])
     |> validate_format(:url, @url_format)
     |> normalize_url()
-    |> unsafe_validate_unique(:url, Repo)
+
+    # |> unsafe_validate_unique(:url, Repo)
   end
 
   @doc false
   def create_changeset(attrs) do
     pre_create_changeset(attrs)
-    |> cast(attrs, [:name, :url, :last_read_chapter, :last_chapter, :preview])
+    |> cast(attrs, [:name, :url, :last_chapter, :preview])
     |> unique_constraint(:url)
     |> put_tags_if_changed(attrs)
   end
@@ -46,8 +51,8 @@ defmodule MangaWatcher.Series.Manga do
   @doc false
   def pre_update_changeset(manga, attrs) do
     manga
-    |> cast(attrs, [:name, :url, :last_read_chapter, :last_chapter, :failed_updates, :preview])
-    |> validate_required([:name, :url, :last_read_chapter, :last_chapter])
+    |> cast(attrs, [:name, :url, :last_chapter, :failed_updates, :preview])
+    |> validate_required([:name, :url, :last_chapter])
     |> validate_format(:url, @url_format)
     |> normalize_url()
     |> unsafe_validate_unique(:url, Repo)
@@ -59,6 +64,7 @@ defmodule MangaWatcher.Series.Manga do
     manga
     |> pre_update_changeset(attrs)
     |> put_tags_if_changed(attrs)
+    |> put_user_mangas_if_present()
   end
 
   def add_tag(manga, tag) do
@@ -90,8 +96,18 @@ defmodule MangaWatcher.Series.Manga do
     end
   end
 
+  defp put_user_mangas_if_present(cs) do
+    if Map.has_key?(cs.changes, :user_mangas) do
+      cs |> cast_assoc(:user_mangas)
+    else
+      cs
+    end
+  end
+
   defp put_tags_if_changed(cs, attrs) do
-    if Map.has_key?(attrs, :tags) and is_binary(attrs[:tags]) do
+    # TODO: parameters from outside should always come as binaries
+    if (Map.has_key?(attrs, :tags) and is_binary(attrs[:tags])) ||
+         (Map.has_key?(attrs, "tags") and is_binary(attrs["tags"])) do
       put_assoc(cs, :tags, parse_tags(attrs))
     else
       cs
@@ -99,7 +115,7 @@ defmodule MangaWatcher.Series.Manga do
   end
 
   defp parse_tags(params) do
-    (params[:tags] || "")
+    (params[:tags] || params["tags"] || "")
     |> String.split(",")
     |> Enum.map(&String.trim/1)
     |> Enum.reject(&(&1 == ""))

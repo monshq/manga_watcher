@@ -2,7 +2,8 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
   alias MangaWatcher.PreviewUploader
   use MangaWatcherWeb, :live_component
 
-  alias MangaWatcher.Series
+  alias MangaWatcher.Series.Manga
+  alias MangaWatcher.UserMangas
 
   require Logger
 
@@ -23,20 +24,24 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
     ~H"""
     <%= if @manga.failed_updates > 5 do %>
       <span class="text-red-500 dark:text-red-500 font-bold">
-        <%= @manga.last_read_chapter %> / <%= @manga.last_chapter %>
+        <%= last_read_chapter(@manga) %> / <%= @manga.last_chapter %>
       </span>
     <% else %>
-      <%= if @manga.last_chapter == @manga.last_read_chapter do %>
+      <%= if @manga.last_chapter == last_read_chapter(@manga) do %>
         <span class="text-gray-400 dark:text-gray-500">
-          <%= @manga.last_read_chapter %> / <%= @manga.last_chapter %>
+          <%= last_read_chapter(@manga) %> / <%= @manga.last_chapter %>
         </span>
       <% else %>
         <span class="text-green-600 dark:text-green-300 font-bold">
-          <%= @manga.last_read_chapter %> / <%= @manga.last_chapter %>
+          <%= last_read_chapter(@manga) %> / <%= @manga.last_chapter %>
         </span>
       <% end %>
     <% end %>
     """
+  end
+
+  def last_read_chapter(%Manga{} = manga) do
+    hd(manga.user_mangas).last_read_chapter
   end
 
   @impl true
@@ -62,7 +67,7 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
           </dl>
         </div>
         <div class="mb-2 mr-2 flex justify-end md:gap-4 gap-1 flex-row whitespace-nowrap">
-          <%= if @manga.last_chapter != @manga.last_read_chapter do %>
+          <%= if @manga.last_chapter != last_read_chapter(@manga) do %>
             <button
               phx-click="mark_as_read"
               phx-target={@myself}
@@ -82,7 +87,12 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
   def handle_event("mark_as_read", _value, socket) do
     manga = socket.assigns.manga
     Logger.info("marking manga #{manga.name} as read")
-    {:ok, manga} = Series.update_manga(manga, %{last_read_chapter: manga.last_chapter})
+
+    {:ok, user_manga} =
+      UserMangas.update_user_manga(hd(manga.user_mangas), %{last_read_chapter: manga.last_chapter})
+
+    manga = %{manga | user_mangas: [user_manga]}
+
     {:noreply, assign(socket, :manga, manga)}
   end
 end

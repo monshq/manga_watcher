@@ -2,6 +2,7 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
   use MangaWatcherWeb, :live_component
 
   alias MangaWatcher.Series
+  alias MangaWatcher.UserMangas
   alias MangaWatcher.Utils
 
   @impl true
@@ -23,7 +24,9 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
         <.input field={@form[:tags]} label="Tags" value={render_tags(@form)} />
         <%= if @action == :edit do %>
           <.input field={@form[:name]} label="Name" autocomplete="off" />
-          <.input field={@form[:last_read_chapter]} label="Last read chapter" autocomplete="off" />
+          <.inputs_for :let={um_form} field={@form[:user_mangas]}>
+            <.input field={um_form[:last_read_chapter]} label="Last read chapter" autocomplete="off" />
+          </.inputs_for>
         <% end %>
         <:actions>
           <.button phx-disable-with="Saving...">Save Manga</.button>
@@ -105,9 +108,7 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
     save_manga(socket, socket.assigns.action, manga_params)
   end
 
-  defp save_manga(socket, :edit, manga_params) do
-    params = Utils.atomize_keys(manga_params)
-
+  defp save_manga(socket, :edit, params) do
     case Series.update_manga(socket.assigns.manga, params) do
       {:ok, manga} ->
         notify_parent({:saved, manga})
@@ -125,9 +126,9 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
   defp save_manga(socket, :new, manga_params) do
     params = Utils.atomize_keys(manga_params)
 
-    case Series.create_manga(params) do
-      {:ok, manga} ->
-        notify_parent({:saved, manga})
+    case UserMangas.add_manga(socket.assigns.current_user.id, params) do
+      {:ok, user_manga} ->
+        notify_parent({:saved, user_manga.manga})
 
         {:noreply,
          socket

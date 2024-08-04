@@ -80,10 +80,7 @@ defmodule MangaWatcher.Series do
   end
 
   def list_mangas() do
-    Manga
-    |> order_by(desc: fragment("last_chapter - last_read_chapter"))
-    |> order_by(desc: :updated_at)
-    |> Repo.all()
+    Repo.all(Manga)
   end
 
   def list_mangas_for_update() do
@@ -97,6 +94,36 @@ defmodule MangaWatcher.Series do
     Repo.all(query)
   end
 
+  # def filter_mangas(include_tags, exclude_tags) do
+  #   exclude_query =
+  #     from m in Manga,
+  #       join: t in assoc(m, :tags),
+  #       where: t.name in ^exclude_tags,
+  #       select: m.id
+  #
+  #   common_query =
+  #     from m in Manga,
+  #       join: um in assoc(m, :user_mangas),
+  #       where: m.id not in subquery(exclude_query),
+  #       group_by: [m.id, um.last_read_chapter],
+  #       order_by: [desc: m.last_chapter - um.last_read_chapter, desc: :updated_at],
+  #       preload: :user_mangas
+  #
+  #   query =
+  #     case include_tags do
+  #       [] ->
+  #         from m in common_query,
+  #           left_join: t in assoc(m, :tags)
+  #
+  #       _ ->
+  #         from m in common_query,
+  #           left_join: t in assoc(m, :tags),
+  #           where: t.name in ^include_tags
+  #     end
+  #
+  #   Repo.all(query)
+  # end
+
   def broken_asura_mangas() do
     Manga
     |> where(fragment("failed_updates > 5"))
@@ -104,38 +131,15 @@ defmodule MangaWatcher.Series do
     |> Repo.all()
   end
 
-  def filter_mangas(include_tags, exclude_tags) do
-    exclude_query =
-      from m in Manga,
-        join: t in assoc(m, :tags),
-        where: t.name in ^exclude_tags,
-        select: m.id
-
-    query =
-      case include_tags do
-        [] ->
-          from m in Manga,
-            left_join: t in assoc(m, :tags),
-            where: m.id not in subquery(exclude_query),
-            group_by: m.id
-
-        _ ->
-          from m in Manga,
-            left_join: t in assoc(m, :tags),
-            where: m.id not in subquery(exclude_query),
-            where: t.name in ^include_tags,
-            group_by: m.id
-      end
-
-    query
-    |> order_by(desc: fragment("last_chapter - last_read_chapter"))
-    |> order_by(desc: :updated_at)
-    |> Repo.all()
+  def get_manga(attrs) do
+    Manga
+    |> preload([:tags, :user_mangas])
+    |> Repo.get_by(attrs)
   end
 
   def get_manga!(id) do
     Manga
-    |> preload(:tags)
+    |> preload([:tags, :user_mangas])
     |> Repo.get!(id)
   end
 
@@ -148,7 +152,6 @@ defmodule MangaWatcher.Series do
 
     if cs.valid? do
       {:ok, parsed_attrs} = attrs |> Updater.parse_attrs()
-      parsed_attrs = Map.put(parsed_attrs, :last_read_chapter, parsed_attrs.last_chapter)
 
       Manga.create_changeset(parsed_attrs)
       |> Repo.insert()

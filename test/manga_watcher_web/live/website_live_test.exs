@@ -24,7 +24,7 @@ defmodule MangaWatcherWeb.WebsiteLiveTest do
   end
 
   describe "Index" do
-    setup [:create_website]
+    setup [:create_website, :register_and_log_in_user]
 
     test "lists all websites", %{conn: conn, website: website} do
       {:ok, _index_live, html} = live(conn, ~p"/websites")

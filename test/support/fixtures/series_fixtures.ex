@@ -19,6 +19,18 @@ defmodule MangaWatcher.SeriesFixtures do
   end
 
   @doc """
+  Generate a manga with user_manga association with user.
+  """
+  def manga_for_user_fixture(user, attrs \\ %{}) do
+    manga = manga_fixture(attrs)
+
+    {:ok, _user_manga} =
+      MangaWatcher.UserMangas.create_user_manga(%{manga_id: manga.id, user_id: user.id})
+
+    manga
+  end
+
+  @doc """
   Generate a website.
   """
   def website_fixture(attrs \\ %{}) do

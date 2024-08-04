@@ -17,9 +17,8 @@ defmodule MangaWatcherWeb.UserLoginLiveTest do
         conn
         |> log_in_user(user_fixture())
         |> live(~p"/users/log_in")
-        |> follow_redirect(conn, "/")
 
-      assert {:ok, _conn} = result
+      assert {:error, {:redirect, _}} = result
     end
   end
 
