@@ -61,6 +61,15 @@ defmodule MangaWatcher.Series.Manga do
     |> put_tags_if_changed(attrs)
   end
 
+  def add_tag(manga, tag) do
+    manga |> Repo.preload(:tags)
+    tags = [tag | manga.tags]
+
+    manga
+    |> cast(%{}, [])
+    |> put_assoc(:tags, tags)
+  end
+
   defp normalize_url(changeset) do
     url = changeset |> get_field(:url)
 

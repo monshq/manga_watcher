@@ -8,7 +8,7 @@ defmodule MangaWatcherWeb.MangaLive.Index do
 
   require Logger
 
-  @default_exclude_tags ["nsfw", "slow-burner", "still-reading"]
+  @default_exclude_tags ["nsfw", "slow-burner", "still-reading", "broken"]
 
   @impl true
   def mount(_params, _session, socket) do

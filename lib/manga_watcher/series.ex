@@ -65,11 +65,32 @@ defmodule MangaWatcher.Series do
 
   # MANGAS
 
+  def add_manga_tag(manga, tag_name) do
+    tag =
+      case Repo.get_by(Tag, name: tag_name) do
+        nil -> %{name: tag_name}
+        tag -> tag
+      end
+
+    Manga.add_tag(manga, tag) |> Repo.update!()
+  end
+
   def list_mangas() do
     Manga
     |> order_by(desc: fragment("last_chapter - last_read_chapter"))
     |> order_by(desc: :updated_at)
     |> Repo.all()
+  end
+
+  def list_mangas_for_update() do
+    query =
+      from m in Manga,
+        left_join: t in assoc(m, :tags),
+        on: t.name == "broken",
+        where: is_nil(t.id),
+        group_by: m.id
+
+    Repo.all(query)
   end
 
   def broken_asura_mangas() do
@@ -139,7 +160,7 @@ defmodule MangaWatcher.Series do
   end
 
   def refresh_all_manga() do
-    list_mangas() |> Repo.preload(:tags) |> Updater.batch_update()
+    list_mangas_for_update() |> Repo.preload(:tags) |> Updater.batch_update()
   end
 
   def delete_manga(%Manga{} = manga) do
