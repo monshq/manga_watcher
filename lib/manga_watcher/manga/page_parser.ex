@@ -13,7 +13,7 @@ defmodule MangaWatcher.Manga.PageParser do
 
     last_chapter =
       links
-      |> Stream.map(fn l -> Regex.scan(~r/chapter-(\d*)/, l) end)
+      |> Stream.map(fn l -> Regex.scan(~r/chapter[-\/](\d*)/, l) end)
       |> Stream.reject(&Enum.empty?/1)
       |> Stream.map(&hd/1)
       |> Stream.map(&List.last/1)
