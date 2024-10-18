@@ -7,6 +7,7 @@ defmodule MangaWatcher.Manga.Updater do
 
   @downloader Application.compile_env(:manga_watcher, :page_downloader)
   @same_host_interval Application.compile_env(:manga_watcher, :same_host_interval)
+  @failed_updates_allowed 5
 
   def batch_update(mangas) do
     Logger.info("starting update of all mangas")
@@ -46,7 +47,12 @@ defmodule MangaWatcher.Manga.Updater do
       {:error, reason} ->
         Logger.error("could not update manga #{manga.name}: #{reason}")
         {:ok, _} = Series.update_manga(manga, %{failed_updates: manga.failed_updates + 1})
-        {:ok, _} = Series.add_manga_tag(manga, "broken")
+
+        if manga.failed_updates > @failed_updates_allowed do
+          {:ok, _} = Series.add_manga_tag(manga, "broken")
+          Logger.warning("manga #{manga.name} is now broken")
+        end
+
         manga
     end
   end

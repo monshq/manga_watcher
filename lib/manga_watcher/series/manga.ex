@@ -62,7 +62,7 @@ defmodule MangaWatcher.Series.Manga do
   end
 
   def add_tag(manga, tag) do
-    manga |> Repo.preload(:tags)
+    manga = manga |> Repo.preload(:tags)
     tags = [tag | manga.tags]
 
     manga
@@ -71,7 +71,7 @@ defmodule MangaWatcher.Series.Manga do
   end
 
   def remove_tag(manga, tag_name) do
-    manga |> Repo.preload(:tags)
+    manga = manga |> Repo.preload(:tags)
     # would be easier to just delete the record in manga_tags
     tags = Enum.filter(manga.tags, fn t -> tag_name != t.name end)
 
