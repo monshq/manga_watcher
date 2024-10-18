@@ -21,7 +21,7 @@ config :logger, level: :info
 # of environment variables, is done on config/runtime.exs.
 
 config :manga_watcher, MangaWatcher.Manga.UpdatePoller, enabled: true
-config :manga_watcher, :same_host_interval, 5000
+config :manga_watcher, :same_host_interval, 2500
 
 config :waffle,
   storage: Waffle.Storage.Local,
