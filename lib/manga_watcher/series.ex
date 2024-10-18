@@ -75,6 +75,10 @@ defmodule MangaWatcher.Series do
     Manga.add_tag(manga, tag) |> Repo.update()
   end
 
+  def remove_manga_tag(manga, tag_name) do
+    Manga.remove_tag(manga, tag_name) |> Repo.update()
+  end
+
   def list_mangas() do
     Manga
     |> order_by(desc: fragment("last_chapter - last_read_chapter"))

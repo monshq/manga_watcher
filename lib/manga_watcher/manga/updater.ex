@@ -37,7 +37,9 @@ defmodule MangaWatcher.Manga.Updater do
     case manga |> Map.from_struct() |> parse_attrs() do
       {:ok, parsed_attrs} ->
         {:ok, updated_manga} =
-          Series.update_manga(manga, Map.merge(parsed_attrs, %{failed_updates: 0}))
+          {:ok, _} = Series.update_manga(manga, Map.merge(parsed_attrs, %{failed_updates: 0}))
+
+        {:ok, _} = Series.remove_manga_tag(manga, "broken")
 
         updated_manga
 

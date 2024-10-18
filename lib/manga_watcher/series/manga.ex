@@ -70,6 +70,16 @@ defmodule MangaWatcher.Series.Manga do
     |> put_assoc(:tags, tags)
   end
 
+  def remove_tag(manga, tag_name) do
+    manga |> Repo.preload(:tags)
+    # would be easier to just delete the record in manga_tags
+    tags = Enum.filter(manga.tags, fn t -> tag_name != t.name end)
+
+    manga
+    |> cast(%{}, [])
+    |> put_assoc(:tags, tags)
+  end
+
   defp normalize_url(changeset) do
     url = changeset |> get_field(:url)
 
