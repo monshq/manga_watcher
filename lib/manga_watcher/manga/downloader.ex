@@ -4,7 +4,7 @@ defmodule MangaWatcher.Manga.Downloader do
     tesla_client =
       Tesla.client([
         Tesla.Middleware.FollowRedirects,
-        {Tesla.Middleware.Headers, [{"Referer", referer}]}
+        {Tesla.Middleware.Headers, [{"Referer", referer}, {"User-Agent", "MangaWatcher/1.0.0"}]}
         # Tesla.Middleware.Logger
       ])
 
