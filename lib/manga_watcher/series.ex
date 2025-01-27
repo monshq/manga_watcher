@@ -90,7 +90,7 @@ defmodule MangaWatcher.Series do
     query =
       from m in Manga,
         left_join: t in assoc(m, :tags),
-        on: t.name == "broken",
+        on: t.name in ["broken", "completed"],
         where: is_nil(t.id),
         group_by: m.id
 
