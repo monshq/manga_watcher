@@ -17,6 +17,9 @@ defmodule MangaWatcher.Series.Manga do
     field :failed_updates, :integer, default: 0
     field :preview, :string
 
+    # TODO: remove after data migration
+    field :last_read_chapter, :integer
+
     many_to_many :tags, Tag, join_through: "manga_tags", on_replace: :delete
 
     has_many :user_mangas, UserManga

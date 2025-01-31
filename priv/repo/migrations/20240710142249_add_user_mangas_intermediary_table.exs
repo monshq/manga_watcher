@@ -8,9 +8,5 @@ defmodule MangaWatcher.Repo.Migrations.AddUserMangasIntermediaryTable do
       add :last_read_chapter, :integer, null: false, default: 0
       timestamps()
     end
-
-    alter table(:mangas) do
-      remove(:last_read_chapter, :integer)
-    end
   end
 end
