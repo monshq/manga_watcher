@@ -1,7 +1,13 @@
 <.flash_group flash={@flash} />
 
-<.global_header current_user={@current_user} />
+<section class="min-h-screen flex flex-col items-center">
+  <.global_header current_user={@current_user} />
 
-<main id="content" class="max-w-[85rem] mx-auto" role="main">
-  <%= @inner_content %>
-</main>
+  <main
+    id="content"
+    class="grow flex flex-col w-full max-w-[85rem] md:px-8 p-0 align-middle"
+    role="main"
+  >
+    <%= @inner_content %>
+  </main>
+</section>

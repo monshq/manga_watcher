@@ -90,7 +90,6 @@ defmodule MangaWatcher.UserMangas do
         end
 
       error ->
-        Logger.error("could not create manga #{attrs[:url]} for user #{user_id}")
         error
     end
   end

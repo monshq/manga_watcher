@@ -1,83 +1,40 @@
-<!-- <div class="inline-flex gap-x-2"> -->
-    <!--   <.async_result assign={@refresh_state}> -->
-    <!--     <:loading> -->
-    <!--       <button -->
-    <!--         disabled -->
-    <!--         phx-click="refresh_all_manga" -->
-    <!--         class="inline-flex items-center gap-x-2 text-sm font-semibold text-primary disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600" -->
-    <!--       > -->
-    <!--         <svg -->
-    <!--           class="animate-spin h-3 w-3 text-white" -->
-    <!--           xmlns="http://www.w3.org/2000/svg" -->
-    <!--           fill="none" -->
-    <!--           viewBox="0 0 24 24" -->
-    <!--         > -->
-    <!--           <circle -->
-    <!--             class="opacity-25" -->
-    <!--             cx="12" -->
-    <!--             cy="12" -->
-    <!--             r="10" -->
-    <!--             stroke="currentColor" -->
-    <!--             stroke-width="4" -->
-    <!--           > -->
-    <!--           </circle> -->
-    <!--           <path -->
-    <!--             class="opacity-75" -->
-    <!--             fill="currentColor" -->
-    <!--             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" -->
-    <!--           > -->
-    <!--           </path> -->
-    <!--         </svg> -->
-    <!--         Processing... -->
-    <!--       </button> -->
-    <!--     </:loading> -->
-    <!--     <button -->
-    <!--       phx-click="refresh_all_manga" -->
-    <!--       class="inline-flex items-center gap-x-2 text-sm font-semibold text-primary disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600" -->
-    <!--     > -->
-    <!--       Update all -->
-    <!--     </button> -->
-    <!--   </.async_result> -->
-    <!-- </div> -->
-<section class="md:mx-8 m-0">
-  <div class="flex flex-col">
-    <div class="p-1.5 min-w-full inline-block align-middle">
-      <div class="shadow overflow-hidden dark:border-gray-700 dark:shadow-gray-900 min-h-12">
-        <div class="my-1 md:px-2 md:py-5 flex whitespace-nowrap overflow-x-scroll">
-          <span class="py-2">
-            <button type="button" phx-click="show_all">
-              <div class="ml-4 text-xs inline-flex items-center font-bold leading-sm uppercase px-3 py-1
+<div class="flex flex-col">
+  <div class="p-1.5 min-w-full inline-block align-middle">
+    <div class="shadow overflow-hidden dark:border-gray-700 dark:shadow-gray-900 min-h-12">
+      <div class="my-1 md:px-2 md:py-5 flex whitespace-nowrap overflow-x-scroll">
+        <span class="py-2">
+          <button type="button" phx-click="show_all">
+            <div class="ml-4 text-xs inline-flex items-center font-bold leading-sm uppercase px-3 py-1
             bg-blue-600 hover:bg-blue-700 text-white rounded-full">
-                Show all
-              </div>
-            </button>
-          </span>
-          <%= for t <- @tags do %>
-            <.manga_tag
-              id={t.id}
-              name={t.name}
-              include={t.name in @include_tags}
-              exclude={t.name in @exclude_tags}
-            />
-          <% end %>
-        </div>
-
-        <section class="min-w-full card-section" id="mangas" phx-update="stream">
-          <%= for {id, manga} <- @streams.mangas do %>
-            <.live_component
-              module={MangaWatcherWeb.MangaLive.MangaComponent}
-              id={id}
-              title={@page_title}
-              action={@live_action}
-              manga={manga}
-              patch={~p"/mangas/#{manga}/edit"}
-            />
-          <% end %>
-        </section>
+              Show all
+            </div>
+          </button>
+        </span>
+        <%= for t <- @tags do %>
+          <.manga_tag
+            id={t.id}
+            name={t.name}
+            include={t.name in @include_tags}
+            exclude={t.name in @exclude_tags}
+          />
+        <% end %>
       </div>
+
+      <section class="min-w-full card-section" id="mangas" phx-update="stream">
+        <%= for {id, manga} <- @streams.mangas do %>
+          <.live_component
+            module={MangaWatcherWeb.MangaLive.MangaComponent}
+            id={id}
+            title={@page_title}
+            action={@live_action}
+            manga={manga}
+            patch={~p"/mangas/#{manga}/edit"}
+          />
+        <% end %>
+      </section>
     </div>
   </div>
-</section>
+</div>
 
 <.modal
   :if={@live_action in [:new, :edit]}

@@ -104,4 +104,8 @@
   .input-primary {
     @apply text-zinc-100 bg-zinc-900;
   }
+
+  .input-primary > input {
+    @apply border-zinc-100 ring-0;
+  }
 }

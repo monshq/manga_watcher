@@ -1,23 +1,9 @@
-FROM --platform=linux/amd64 elixir:1.13-otp-23-slim AS build
+FROM --platform=linux/amd64 elixir:1.18-otp-27-slim AS build
 
-ENV ENV prod
-ENV MIX_ENV prod
-
-# RUN apt-get update && apt-get install -y git unzip curl build-essential autoconf libssh-dev libncurses5-dev
-# ENV ASDF_DIR=/opt/asdf
-# RUN git clone https://github.com/asdf-vm/asdf.git $ASDF_DIR
-# ENV PATH=$ASDF_DIR/shims:$ASDF_DIR/bin:$PATH
-# ENV ASDF_DATA_DIR=$ASDF_DIR
-#
-# RUN asdf plugin add alias
-#
-# RUN asdf plugin add erlang
-# RUN asdf plugin add elixir
+ENV ENV=prod
+ENV MIX_ENV=prod
 
 WORKDIR /app
-
-# ADD .tool-versions .
-# RUN asdf install
 
 RUN mix do local.hex --force, local.rebar --force
 ADD mix.exs mix.lock .
