@@ -64,7 +64,7 @@ defmodule MangaWatcherWeb.MangaLive.Index do
 
     socket
     |> stream_delete(:mangas, manga)
-    |> push_patch(to: ~p/\//)
+    |> push_patch(to: ~p"/")
     |> then(&{:noreply, &1})
   end
 
@@ -74,7 +74,7 @@ defmodule MangaWatcherWeb.MangaLive.Index do
 
     socket
     |> stream_insert(:mangas, manga)
-    |> push_patch(to: ~p/\//)
+    |> push_patch(to: ~p"/")
     |> then(&{:noreply, &1})
   end
 

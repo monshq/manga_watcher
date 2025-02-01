@@ -67,7 +67,7 @@ defmodule MangaWatcher.Series.Manga do
     manga
     |> pre_update_changeset(attrs)
     |> put_tags_if_changed(attrs)
-    |> put_user_mangas_if_present()
+    |> put_user_mangas_if_present(attrs)
   end
 
   def add_tag(manga, tag) do
@@ -99,8 +99,8 @@ defmodule MangaWatcher.Series.Manga do
     end
   end
 
-  defp put_user_mangas_if_present(cs) do
-    if Map.has_key?(cs.changes, :user_mangas) do
+  defp put_user_mangas_if_present(cs, attrs) do
+    if Map.has_key?(attrs, "user_mangas") do
       cs |> cast_assoc(:user_mangas)
     else
       cs
