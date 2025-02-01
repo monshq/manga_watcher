@@ -7,7 +7,10 @@ defmodule MangaWatcher.Manga.PageParser do
 
     name = Floki.find(doc, website.title_regex) |> Floki.text()
 
-    preview = Floki.attribute(doc, website.preview_regex, "src") |> first_or_nil()
+    preview =
+      Floki.attribute(doc, website.preview_regex, "src")
+      |> first_or_nil()
+      |> normalize_url(website.base_url)
 
     links = Floki.find(doc, website.links_regex)
 
@@ -48,6 +51,16 @@ defmodule MangaWatcher.Manga.PageParser do
     case Regex.scan(regex, text) do
       [[_, chapter]] -> String.to_integer(chapter)
       _ -> nil
+    end
+  end
+
+  defp normalize_url(nil, _), do: nil
+
+  defp normalize_url(url, base_url) do
+    if String.starts_with?(url, "/") do
+      "http://#{base_url}#{url}"
+    else
+      url
     end
   end
 end
