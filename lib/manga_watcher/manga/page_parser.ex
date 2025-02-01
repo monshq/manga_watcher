@@ -9,16 +9,13 @@ defmodule MangaWatcher.Manga.PageParser do
 
     preview = Floki.attribute(doc, website.preview_regex, "src") |> first_or_nil()
 
-    links = Floki.attribute(doc, website.links_regex, "href")
+    links = Floki.find(doc, website.links_regex)
 
     last_chapter =
       links
-      |> Stream.map(fn l -> Regex.scan(~r/chapter[-\/](\d*)/, l) end)
-      |> Stream.reject(&Enum.empty?/1)
-      |> Stream.map(&hd/1)
-      |> Stream.map(&List.last/1)
-      |> Stream.reject(&(&1 == ""))
-      |> Stream.map(&String.to_integer/1)
+      |> Stream.map(&Floki.raw_html/1)
+      |> Stream.map(&extract_chapter/1)
+      |> Stream.reject(&is_nil/1)
       |> Enum.max()
 
     res = %{name: name, last_chapter: last_chapter, preview: preview}
@@ -33,4 +30,24 @@ defmodule MangaWatcher.Manga.PageParser do
 
   defp first_or_nil([_] = l), do: hd(l)
   defp first_or_nil(_), do: nil
+
+  defp extract_chapter(doc) do
+    # this regex tries to parse chapter number from href
+    case extract_number(~r|chapter[-/](\d+)|, doc) do
+      chapter when chapter < 1000 ->
+        chapter
+
+      # if chapter number is more than 1000 it's likely an id instead
+      # so trying to get chapter number from text now
+      _ ->
+        extract_number(~r|chapter\s+(\d+)|iu, doc)
+    end
+  end
+
+  defp extract_number(regex, text) do
+    case Regex.scan(regex, text) do
+      [[_, chapter]] -> String.to_integer(chapter)
+      _ -> nil
+    end
+  end
 end
