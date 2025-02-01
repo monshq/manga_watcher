@@ -5,3 +5,14 @@ If you read a lot of ongoing mangas / manhwas, then you probably had difficultie
 ![screenshot.png](screenshot.png)
 
 It supports any manga website that doesn't block access to it via captcha or checking for browser features. To be able to add manga from a new website you have to create it on "Manga websites" page and add css selectors for title, links and preview. If you used ublock to block adds manually before, these selectors are pretty much the same.
+
+# Deploying
+
+```sh
+SERVER=your.server.com make release
+```
+Requirements:
+- docker locally to build the app
+- `/srv/projects` to be created and writable by current user
+- systemd and [init-exporter](https://github.com/funbox/init-exporter) installed on server
+- filled `secrets.exs` config with http server and psql config
