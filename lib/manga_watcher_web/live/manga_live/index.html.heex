@@ -14,8 +14,8 @@
           <.manga_tag
             id={t.id}
             name={t.name}
-            include={t.name in @include_tags}
-            exclude={t.name in @exclude_tags}
+            include={t.name in @user.include_tags}
+            exclude={t.name in @user.exclude_tags}
           />
         <% end %>
       </div>

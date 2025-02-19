@@ -11,14 +11,13 @@ defmodule MangaWatcherWeb.TagComponent do
   def manga_tag(assigns) do
     ~H"""
     <span class="py-2">
-      <%= if @include do %>
-        <.tag_button id={@id} name={@name} state="plus" colors="bg-green-200 text-green-700" />
-      <% else %>
-        <%= if @exclude do %>
+      <%= cond do %>
+        <% @include -> %>
+          <.tag_button id={@id} name={@name} state="plus" colors="bg-green-200 text-green-700" />
+        <% @exclude -> %>
           <.tag_button id={@id} name={@name} state="minus" colors="bg-red-200 text-red-700" />
-        <% else %>
+        <% true -> %>
           <.tag_button id={@id} name={@name} state="neutral" colors="bg-gray-200 text-gray-700" />
-        <% end %>
       <% end %>
     </span>
     """

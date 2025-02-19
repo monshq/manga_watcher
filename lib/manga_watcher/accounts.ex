@@ -146,6 +146,12 @@ defmodule MangaWatcher.Accounts do
     end
   end
 
+  def update_user_tag_prefs(user, include_tags, exclude_tags) do
+    user
+    |> User.tag_prefs_changeset(%{include_tags: include_tags, exclude_tags: exclude_tags})
+    |> Repo.update()
+  end
+
   defp user_email_multi(user, email, context) do
     changeset =
       user

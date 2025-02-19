@@ -10,6 +10,8 @@ defmodule MangaWatcher.Accounts.User do
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :confirmed_at, :naive_datetime
+    field :include_tags, {:array, :string}
+    field :exclude_tags, {:array, :string}
 
     many_to_many :mangas, Manga, join_through: UserManga, on_replace: :delete
 
@@ -159,5 +161,9 @@ defmodule MangaWatcher.Accounts.User do
     else
       add_error(changeset, :current_password, "is not valid")
     end
+  end
+
+  def tag_prefs_changeset(user, attrs) do
+    cast(user, attrs, [:include_tags, :exclude_tags])
   end
 end

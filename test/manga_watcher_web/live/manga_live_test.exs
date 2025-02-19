@@ -4,6 +4,7 @@ defmodule MangaWatcherWeb.MangaLiveTest do
   import Phoenix.LiveViewTest
   import MangaWatcher.SeriesFixtures
 
+  alias MangaWatcher.Accounts
   alias MangaWatcher.Series
 
   @create_attrs %{url: "http://mangasource.com", tags: "shoujo-ai, yuri"}
@@ -75,6 +76,21 @@ defmodule MangaWatcherWeb.MangaLiveTest do
       m = Series.get_manga!(manga.id)
       assert m.url == @update_attrs[:url]
       assert Enum.map_join(m.tags, ", ", fn t -> t.name end) == "seinen"
+    end
+
+    test "filters mangas in listing", %{conn: conn, manga: manga, user: user} do
+      {:ok, manga} =
+        manga
+        |> MangaWatcher.Repo.preload([:tags])
+        |> Series.update_manga(%{tags: "seinen"})
+
+      {:ok, _index_live, html} = live(conn, ~p"/mangas")
+      assert html =~ manga.name
+
+      {:ok, _} = Accounts.update_user_tag_prefs(user, [], ["seinen"])
+
+      {:ok, _index_live, html} = live(conn, ~p"/mangas")
+      refute html =~ manga.name
     end
 
     test "deletes manga in listing", %{conn: conn, manga: manga} do
