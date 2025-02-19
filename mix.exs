@@ -55,7 +55,7 @@ defmodule MangaWatcher.MixProject do
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.20"},
-      {:tesla, "~> 1.4"},
+      {:req, "~> 0.5"},
       {:bandit, "~> 1.0"},
       {:waffle, "~> 1.1"},
       {:waffle_ecto, "~> 0.0"},

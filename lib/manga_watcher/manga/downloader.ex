@@ -1,23 +1,17 @@
 defmodule MangaWatcher.Manga.Downloader do
   @spec download(String.t(), String.t()) :: {:ok, binary} | {:error, atom}
   def download(url, referer \\ "") do
-    tesla_client =
-      Tesla.client([
-        Tesla.Middleware.FollowRedirects,
-        {Tesla.Middleware.Headers, [{"Referer", referer}, {"User-Agent", "MangaWatcher/1.0.0"}]}
-        # Tesla.Middleware.Logger
-      ])
+    case Req.get!(url,
+           headers: [{"Referer", referer}, {"User-Agent", "MangaWatcher/1.0.0"}],
+           redirect_trusted: true
+         ) do
+      %Req.Response{status: 200, body: body} ->
+        {:ok, body}
 
-    case Tesla.get(tesla_client, url) do
-      {:ok, request} ->
-        if Integer.to_string(request.status) =~ ~r/2\d\d/ do
-          {:ok, request.body}
-        else
-          {:error, "wrong response code: #{request.status}"}
-        end
-
-      error ->
-        error
+      %Req.Response{status: status} ->
+        {:error, "wrong response code: #{status}"}
     end
+  rescue
+    e -> {:error, e}
   end
 end
