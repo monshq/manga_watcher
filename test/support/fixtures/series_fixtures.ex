@@ -37,7 +37,7 @@ defmodule MangaWatcher.SeriesFixtures do
     {:ok, website} =
       attrs
       |> Enum.into(%{
-        base_url: "http://mangasource.com",
+        base_url: "mangasource.com",
         links_regex: "#chapterlist a",
         title_regex: "h1.entry-title",
         preview_regex: ".thumbook img"

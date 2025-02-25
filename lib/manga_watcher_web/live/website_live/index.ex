@@ -17,18 +17,21 @@ defmodule MangaWatcherWeb.WebsiteLive.Index do
   defp apply_action(socket, :edit, %{"id" => id}) do
     socket
     |> assign(:page_title, "Edit Website")
+    |> assign(:website_counters, Series.website_counts())
     |> assign(:website, Series.get_website!(id))
   end
 
   defp apply_action(socket, :new, _params) do
     socket
     |> assign(:page_title, "New Website")
+    |> assign(:website_counters, Series.website_counts())
     |> assign(:website, %Website{})
   end
 
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(:page_title, "Listing Websites")
+    |> assign(:website_counters, Series.website_counts())
     |> assign(:website, nil)
   end
 
@@ -43,5 +46,28 @@ defmodule MangaWatcherWeb.WebsiteLive.Index do
     {:ok, _} = Series.delete_website(website)
 
     {:noreply, stream_delete(socket, :websites, website)}
+  end
+
+  def website_status(assigns) do
+    ~H"""
+    <span class="font-bold">
+      <%= cond do %>
+        <% @counter.total == 0 -> %>
+          Unused
+        <% @counter.total == @counter.broken -> %>
+          <span class="text-red-500">
+            Broken <%= "(#{@counter.total})" %>
+          </span>
+        <% @counter.broken == 0 -> %>
+          <span class="text-green-500">
+            Healthy <%= "(#{@counter.total})" %>
+          </span>
+        <% true -> %>
+          <span class="text-yellow-500">
+            Partially working <%= "(#{@counter.total - @counter.broken} / #{@counter.total})" %>
+          </span>
+      <% end %>
+    </span>
+    """
   end
 end

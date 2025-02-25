@@ -19,6 +19,25 @@ defmodule MangaWatcher.Series do
     Repo.all(Website)
   end
 
+  def website_counts do
+    query =
+      from w in Website,
+        left_join: m in Manga,
+        on: like(m.url, fragment("'%' || ? || '%'", w.base_url)),
+        left_join: t in assoc(m, :tags),
+        group_by: w.id,
+        select: %{
+          id: w.id,
+          total: count(m.id, :distinct),
+          broken: fragment("COUNT(DISTINCT CASE WHEN ? = ? THEN ? END)", t.name, "broken", m.id)
+        }
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn map ->
+      {map.id, Map.delete(map, :id)}
+    end)
+  end
+
   def get_website!(id), do: Repo.get!(Website, id)
 
   def get_website_for_url(url) do
