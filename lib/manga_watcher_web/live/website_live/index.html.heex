@@ -7,6 +7,9 @@
   create_url={~p"/websites/new"}
 >
   <:col :let={{_id, website}} label="Base url"><%= website.base_url %></:col>
+  <:col :let={{_id, website}} label="Mangas">
+    <%= @website_counters[website.id].total %>
+  </:col>
   <:col :let={{_id, website}} label="Status">
     <% counter = @website_counters[website.id] %>
     <span class="font-bold">
@@ -15,15 +18,20 @@
           Unused
         <% counter.total == counter.broken -> %>
           <span class="text-red-500">
-            Broken <%= "(#{counter.total})" %>
+            Broken
           </span>
         <% counter.broken == 0 -> %>
           <span class="text-green-500">
-            Healthy <%= "(#{counter.total})" %>
+            Healthy
           </span>
         <% true -> %>
-          <span class="text-yellow-500">
-            Partially working <%= "(#{counter.total - counter.broken} / #{counter.total})" %>
+          <span class="relative group inline-block text-yellow-500">
+            <span class="underline decoration-dotted decoration-2">
+              Unstable
+            </span>
+            <div class="absolute left-1/2 transform -translate-x-1/2 mt-2 hidden group-hover:block bg-gray-800 text-white text-sm rounded-md px-3 py-1 shadow-lg whitespace-nowrap">
+              <%= "#{counter.total - counter.broken} / #{counter.total}" %> healthy
+            </div>
           </span>
       <% end %>
     </span>
