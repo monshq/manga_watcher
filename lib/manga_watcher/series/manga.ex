@@ -26,6 +26,7 @@ defmodule MangaWatcher.Series.Manga do
     many_to_many :users, User, join_through: UserManga, on_replace: :delete
 
     timestamps()
+    field :scanned_at, :naive_datetime, default: DateTime.from_unix!(0) |> DateTime.to_naive()
   end
 
   # From https://tools.ietf.org/html/rfc3986#appendix-B

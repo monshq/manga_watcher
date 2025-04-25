@@ -47,6 +47,8 @@ defmodule MangaWatcher.PreviewUploader do
     "/images/default_preview.jpg"
   end
 
+  def exists?(nil), do: false
+
   def exists?(name) do
     prefix = Application.get_env(:waffle, :storage_dir_prefix)
     dir = Application.get_env(:waffle, :storage_dir)

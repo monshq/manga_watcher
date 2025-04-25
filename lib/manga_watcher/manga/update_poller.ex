@@ -3,7 +3,8 @@ defmodule MangaWatcher.Manga.UpdatePoller do
 
   alias MangaWatcher.Series
 
-  @interval 1800
+  # seconds
+  @interval 60
 
   def start_link(opts) do
     GenServer.start_link(__MODULE__, :no_state, opts)
@@ -17,7 +18,7 @@ defmodule MangaWatcher.Manga.UpdatePoller do
 
   @impl true
   def handle_info(:tick, state) do
-    Series.refresh_all_manga()
+    Series.refresh_outdated()
     Process.send_after(self(), :tick, @interval * 1000)
     {:noreply, state}
   end

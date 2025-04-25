@@ -1,28 +1,44 @@
 defmodule MangaWatcher.SeriesFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `MangaWatcher.Series` context.
+  entities via the `MangaWatcher.Series` context
+  or doing raw inserts.
   """
+
+  alias MangaWatcher.Series.Manga
+  alias MangaWatcher.Repo
 
   @doc """
   Generate a manga.
   """
   def manga_fixture(attrs \\ %{}) do
-    {:ok, manga} =
-      attrs
-      |> Enum.into(%{
-        url: "http://mangasource.com/qwerty"
-      })
-      |> MangaWatcher.Series.create_manga()
+    now = NaiveDateTime.local_now()
 
-    manga
+    default_attrs = %{
+      name: "Fixture Manga",
+      url: "http://mangasource.com/qwerty",
+      preview: nil,
+      last_chapter: 1,
+      failed_updates: 0,
+      scanned_at: now
+    }
+
+    attrs = Map.merge(default_attrs, attrs)
+
+    struct(Manga, attrs)
+    |> Repo.insert!()
   end
 
   @doc """
   Generate a manga with user_manga association with user.
   """
   def manga_for_user_fixture(user, attrs \\ %{}) do
-    manga = manga_fixture(attrs)
+    {:ok, manga} =
+      attrs
+      |> Enum.into(%{
+        url: "http://mangasource.com/qwerty"
+      })
+      |> MangaWatcher.Series.create_manga()
 
     {:ok, _user_manga} =
       MangaWatcher.UserMangas.create_user_manga(%{manga_id: manga.id, user_id: user.id})

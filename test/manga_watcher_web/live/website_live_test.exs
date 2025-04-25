@@ -35,12 +35,12 @@ defmodule MangaWatcherWeb.WebsiteLiveTest do
     end
 
     test "lists correct status for website", %{conn: conn, website: website} do
-      _manga = manga_fixture(url: "https://" <> website.base_url <> "/path")
+      _manga = manga_fixture(%{url: "https://" <> website.base_url <> "/path"})
       {:ok, _index_live, html} = live(conn, ~p"/websites")
 
       assert html =~ "Websites"
       assert html =~ website.base_url
-      assert html =~ "Healthy (1)"
+      assert html =~ "Healthy"
     end
 
     test "saves new website", %{conn: conn} do

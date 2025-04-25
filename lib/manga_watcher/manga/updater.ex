@@ -1,11 +1,9 @@
 defmodule MangaWatcher.Manga.Updater do
   alias MangaWatcher.PreviewUploader
   alias MangaWatcher.Series
-  alias MangaWatcher.Manga.PageParser
 
   require Logger
 
-  @downloader Application.compile_env(:manga_watcher, :page_downloader)
   @same_host_interval Application.compile_env(:manga_watcher, :same_host_interval)
   @failed_updates_allowed 5
 
@@ -34,37 +32,87 @@ defmodule MangaWatcher.Manga.Updater do
     end)
   end
 
-  def update(manga) do
-    case manga |> Map.from_struct() |> parse_attrs() do
-      {:ok, parsed_attrs} ->
-        {:ok, updated_manga} =
-          {:ok, _} = Series.update_manga(manga, Map.merge(parsed_attrs, %{failed_updates: 0}))
-
-        {:ok, _} = Series.remove_manga_tag(manga, "broken")
-
-        updated_manga
+  def update(manga, deps \\ default_deps()) do
+    case plan_update(manga, deps) do
+      {:ok, plan} ->
+        apply_update_plan(manga, plan)
 
       {:error, reason} ->
         Logger.error("could not update manga #{manga.name}: #{reason}")
-        {:ok, _} = Series.update_manga(manga, %{failed_updates: manga.failed_updates + 1})
-
-        if manga.failed_updates > @failed_updates_allowed do
-          {:ok, _} = Series.add_manga_tag(manga, "broken")
-          Logger.warning("manga #{manga.name} is now broken")
-        end
-
-        manga
+        mark_manga_failed(manga)
     end
   end
 
-  def parse_attrs(manga_attrs) do
+  def plan_update(manga, deps) do
+    with {:ok, parsed_attrs} <- manga |> Map.from_struct() |> parse_attrs(deps) do
+      {:ok,
+       %{
+         attrs: Map.merge(parsed_attrs, %{failed_updates: 0}),
+         mark_stale?: mark_stale?(manga, parsed_attrs),
+         remove_broken?: true
+       }}
+    end
+  end
+
+  defp apply_update_plan(manga, %{attrs: attrs, mark_stale?: stale?, remove_broken?: rb}) do
+    {:ok, updated} = Series.update_manga(manga, attrs)
+
+    true = Series.register_manga_scan(updated)
+
+    if rb, do: Series.remove_manga_tag(updated, "broken")
+
+    {:ok, updated} =
+      if stale? do
+        Series.add_manga_tag(updated, "stale")
+      else
+        Series.remove_manga_tag(updated, "stale")
+      end
+
+    updated
+  end
+
+  defp mark_manga_failed(manga) do
+    {:ok, errored} =
+      Series.update_manga(manga, %{
+        failed_updates: manga.failed_updates + 1,
+        scanned_at: DateTime.utc_now()
+      })
+
+    if errored.failed_updates > @failed_updates_allowed do
+      Logger.warning("manga #{manga.name} is now broken")
+      Series.add_manga_tag(errored, "broken")
+    end
+
+    errored
+  end
+
+  defp mark_stale?(manga, attrs) do
+    if manga.last_chapter == attrs[:last_chapter] do
+      not_updated_days =
+        DateTime.diff(DateTime.utc_now(), DateTime.from_naive!(manga.updated_at, "Etc/UTC"), :day)
+
+      not_updated_days > 30
+    else
+      false
+    end
+  end
+
+  def parse_attrs(manga_attrs, deps \\ default_deps()) do
     with {:ok, url} <- Map.fetch(manga_attrs, :url),
          {:ok, website} <- Series.get_website_for_url(url),
-         {:ok, html_content} <- @downloader.download(url),
-         {:ok, attrs} <- PageParser.parse(html_content, website),
-         :ok <- Logger.info("found following attrs for manga: #{inspect(attrs)}"),
+         {:ok, html_content} <- deps.downloader.download(url),
+         {:ok, attrs} <- deps.page_parser.parse(html_content, website),
+         Logger.info("found following attrs for manga: #{inspect(attrs)}"),
          {:ok, preview} <-
-           store_preview(attrs[:preview], manga_attrs[:preview], attrs[:name], url) do
+           store_preview(
+             %{
+               preview_url: attrs[:preview],
+               existing_preview: manga_attrs[:preview],
+               manga_name: attrs[:name],
+               manga_url: url
+             },
+             deps
+           ) do
       {:ok, manga_attrs |> Map.merge(attrs) |> Map.merge(%{preview: preview})}
     else
       :error ->
@@ -75,12 +123,31 @@ defmodule MangaWatcher.Manga.Updater do
     end
   end
 
-  defp store_preview(nil, _, _, _), do: {:ok, nil}
+  defp store_preview(
+         %{existing_preview: original_preview} = input,
+         deps
+       )
+       when original_preview != nil do
+    if PreviewUploader.exists?(original_preview) do
+      {:ok, original_preview}
+    else
+      store_preview(Map.put(input, :existing_preview, nil), deps)
+    end
+  end
 
-  defp store_preview(new_preview, nil, name, url) do
+  defp store_preview(%{preview_url: nil}, _deps), do: {:ok, nil}
+
+  defp store_preview(
+         %{
+           preview_url: new_preview,
+           manga_name: name,
+           manga_url: url
+         },
+         %{downloader: downloader}
+       ) do
     Logger.debug("downloading preview from #{new_preview}")
 
-    case @downloader.download(new_preview, get_referer(url)) do
+    case downloader.download(new_preview, get_referer(url)) do
       {:ok, preview_bin} ->
         PreviewUploader.store(%{
           filename: preview_filename(name, new_preview),
@@ -90,14 +157,6 @@ defmodule MangaWatcher.Manga.Updater do
       {:error, error} ->
         Logger.error("could not download preview for #{name}: #{inspect(error)}")
         {:ok, nil}
-    end
-  end
-
-  defp store_preview(new_preview, original_preview, name, url) do
-    if PreviewUploader.exists?(original_preview) do
-      {:ok, original_preview}
-    else
-      store_preview(new_preview, nil, name, url)
     end
   end
 
@@ -118,5 +177,12 @@ defmodule MangaWatcher.Manga.Updater do
     "https://" <> URI.parse(url).host
   rescue
     _ -> ""
+  end
+
+  defp default_deps do
+    %{
+      downloader: Application.get_env(:manga_watcher, :page_downloader),
+      page_parser: MangaWatcher.Manga.PageParser
+    }
   end
 end

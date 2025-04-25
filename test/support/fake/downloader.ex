@@ -1,10 +1,6 @@
 defmodule MangaWatcher.Fake.Downloader do
-  def download(url, _referer \\ "") do
-    if url do
-      html = File.read!("test/support/fixtures/website_pages/asuratoon.html")
-      {:ok, html}
-    else
-      {:error, "url empty"}
-    end
+  @spec download(String.t(), String.t()) :: {:ok, String.t()} | {:error, any()}
+  def download(url, _referer \\ "") when is_binary(url) do
+    {:ok, File.read!("test/support/fixtures/website_pages/asuratoon.html")}
   end
 end

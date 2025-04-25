@@ -13,6 +13,11 @@ defmodule MangaWatcher.Series do
 
   require Logger
 
+  @update_duration %{
+    normal: %{hour: -1},
+    stale: %{hour: -24}
+  }
+
   # SOURCES
 
   def list_websites do
@@ -106,42 +111,16 @@ defmodule MangaWatcher.Series do
     query =
       from m in Manga,
         left_join: t in assoc(m, :tags),
-        on: t.name in ["broken", "completed"],
-        where: is_nil(t.id),
-        group_by: m.id
+        where:
+          (t.name in ["stale"] and
+             m.updated_at <
+               ^DateTime.shift(DateTime.utc_now(), @update_duration.stale)) or
+            (t.name not in ["broken", "completed", "stale"] and
+               m.updated_at <
+                 ^DateTime.shift(DateTime.utc_now(), @update_duration.normal))
 
     Repo.all(query)
   end
-
-  # def filter_mangas(include_tags, exclude_tags) do
-  #   exclude_query =
-  #     from m in Manga,
-  #       join: t in assoc(m, :tags),
-  #       where: t.name in ^exclude_tags,
-  #       select: m.id
-  #
-  #   common_query =
-  #     from m in Manga,
-  #       join: um in assoc(m, :user_mangas),
-  #       where: m.id not in subquery(exclude_query),
-  #       group_by: [m.id, um.last_read_chapter],
-  #       order_by: [desc: m.last_chapter - um.last_read_chapter, desc: :updated_at],
-  #       preload: :user_mangas
-  #
-  #   query =
-  #     case include_tags do
-  #       [] ->
-  #         from m in common_query,
-  #           left_join: t in assoc(m, :tags)
-  #
-  #       _ ->
-  #         from m in common_query,
-  #           left_join: t in assoc(m, :tags),
-  #           where: t.name in ^include_tags
-  #     end
-  #
-  #   Repo.all(query)
-  # end
 
   def broken_asura_mangas() do
     Manga
@@ -179,13 +158,22 @@ defmodule MangaWatcher.Series do
     end
   end
 
-  def update_manga(%Manga{} = manga, attrs) do
+  def update_manga(%Manga{} = manga, attrs, opts \\ []) do
     manga
     |> Manga.update_changeset(attrs)
-    |> Repo.update()
+    |> Repo.update(opts)
   end
 
-  def refresh_all_manga() do
+  def register_manga_scan(%Manga{} = manga) do
+    {updated_count, _} =
+      Manga
+      |> where(id: ^manga.id)
+      |> Repo.update_all(set: [scanned_at: DateTime.utc_now()])
+
+    updated_count == 1
+  end
+
+  def refresh_outdated() do
     list_mangas_for_update() |> Repo.preload(:tags) |> Updater.batch_update()
   end
 

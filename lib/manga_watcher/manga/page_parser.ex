@@ -1,7 +1,7 @@
 defmodule MangaWatcher.Manga.PageParser do
   alias MangaWatcher.Series.Website
 
-  @spec parse(binary, Website.t()) :: {:ok, map} | {:error, atom}
+  @spec parse(binary, Website.t()) :: {:ok, map} | {:error, any}
   def parse(page, %Website{} = website) do
     {:ok, doc} = Floki.parse_document(page)
 
