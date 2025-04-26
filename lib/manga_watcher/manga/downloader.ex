@@ -1,4 +1,9 @@
 defmodule MangaWatcher.Manga.Downloader do
+  @behaviour __MODULE__
+  @callback download(url :: String.t()) :: {:ok, binary()} | {:error, term()}
+  @callback download(url :: String.t(), referer :: String.t()) ::
+              {:ok, binary()} | {:error, term()}
+
   @spec download(String.t(), String.t()) :: {:ok, binary} | {:error, atom}
   def download(url, referer \\ "") do
     case Req.get!(url,

@@ -2,18 +2,17 @@ defmodule MangaWatcher.Manga.UpdaterTest do
   use MangaWatcher.DataCase, async: false
 
   import MangaWatcher.SeriesFixtures
+  import Mox
 
+  alias MangaWatcher.AttrFetcherMock
   alias MangaWatcher.Series.Manga
   alias MangaWatcher.Manga.Updater
   alias MangaWatcher.Repo
 
-  setup do
-    website_fixture()
-    :ok
-  end
+  setup :verify_on_exit!
 
   describe "update/1 — success path" do
-    test "resets failed_updates, stores new preview, and persists changes" do
+    test "resets failed_updates and persists changes" do
       manga =
         manga_fixture(%{
           url: "https://mangasource.com/manga/1",
@@ -23,22 +22,16 @@ defmodule MangaWatcher.Manga.UpdaterTest do
           updated_at: ~N[2025-02-01 00:00:00]
         })
 
-      defmodule TestDownloader do
-        def download("https://mangasource.com/manga/1"), do: {:ok, "<html>valid html</html>"}
-        def download("https://mangasource.com/preview.jpg", _headers), do: {:ok, "binary preview"}
-      end
+      AttrFetcherMock
+      |> expect(:fetch, fn _manga_attrs ->
+        {:ok, %{name: "Updated Title", preview: "updated_title.jpg", last_chapter: 16}}
+      end)
 
-      defmodule TestPageParser do
-        def parse(_html, _website) do
-          {:ok, %{name: "Updated Title", preview: "https://mangasource.com/preview.jpg"}}
-        end
-      end
-
-      updated = Updater.update(manga, %{downloader: TestDownloader, page_parser: TestPageParser})
+      updated = Updater.update(manga, AttrFetcherMock)
 
       assert updated.id == manga.id
       assert updated.failed_updates == 0
-      assert updated.preview =~ "updated_title"
+      assert updated.preview == "updated_title.jpg"
 
       reloaded = Repo.get!(Manga, manga.id)
       assert reloaded.preview == updated.preview
@@ -52,7 +45,6 @@ defmodule MangaWatcher.Manga.UpdaterTest do
         manga_fixture(%{
           name: "Same Name",
           url: "https://mangasource.com/manga/1",
-          # auto-name, since file is missing and preview will try to re-create
           preview: "same_name.jpg",
           last_chapter: 15,
           failed_updates: 0,
@@ -61,18 +53,12 @@ defmodule MangaWatcher.Manga.UpdaterTest do
           scanned_at: ~N[2025-03-01 00:00:00]
         })
 
-      defmodule TestDownloaderSame do
-        def download("https://mangasource.com/manga/1"), do: {:ok, "<html>same</html>"}
-        def download(_url, _headers), do: {:ok, "binary preview"}
-      end
+      AttrFetcherMock
+      |> expect(:fetch, fn _manga_attrs ->
+        {:ok, %{name: "Same Name", preview: "same_name.jpg", last_chapter: 15}}
+      end)
 
-      defmodule TestPageParserSame do
-        def parse(_html, _website),
-          do: {:ok, %{name: "Same Name", preview: "existing.jpg", last_chapter: 15}}
-      end
-
-      updated =
-        Updater.update(manga, %{downloader: TestDownloaderSame, page_parser: TestPageParserSame})
+      updated = Updater.update(manga, AttrFetcherMock)
 
       reloaded = Repo.get!(Manga, manga.id)
 
@@ -91,20 +77,13 @@ defmodule MangaWatcher.Manga.UpdaterTest do
           failed_updates: 5
         })
 
-      defmodule TestDownloader do
-        def download("https://mangasource.com/manga/1"), do: {:ok, "<html>valid html</html>"}
-      end
+      AttrFetcherMock
+      |> expect(:fetch, fn _manga_attrs -> {:error, :parse_failed} end)
 
-      defmodule TestPageParser do
-        def parse(_html, _website) do
-          {:error, :invalid_html}
-        end
-      end
-
-      errored = Updater.update(manga, %{downloader: TestDownloader, page_parser: TestPageParser})
+      errored = Updater.update(manga, AttrFetcherMock)
 
       assert errored.failed_updates == 6
-      # after passing threshold (5), it should have the "broken" tag in DB
+
       reloaded = Repo.get!(Manga, manga.id) |> Repo.preload(:tags)
       assert "broken" in Enum.map(reloaded.tags, & &1.name)
     end
@@ -121,56 +100,39 @@ defmodule MangaWatcher.Manga.UpdaterTest do
         updated_at: ~N[2024-12-01 00:00:00]
       }
 
-      defmodule TestDownloader do
-        def download("https://mangasource.com/manga/1"), do: {:ok, "<html>test</html>"}
-        def download("https://cdn.org/new.jpg", _headers), do: {:ok, "img bytes"}
-      end
+      AttrFetcherMock
+      |> expect(:fetch, fn _manga_attrs ->
+        {:ok, %{name: "New Name", preview: "new_name.jpg", last_chapter: 10}}
+      end)
 
-      defmodule TestPageParser do
-        def parse(_html, _website),
-          do: {:ok, %{name: "New Name", last_chapter: 10, preview: "https://cdn.org/new.jpg"}}
-      end
-
-      assert {:ok, plan} =
-               Updater.plan_update(manga, %{
-                 downloader: TestDownloader,
-                 page_parser: TestPageParser
-               })
+      assert {:ok, plan} = Updater.plan_update(manga, AttrFetcherMock)
 
       assert plan.attrs.name == "New Name"
-      assert plan.attrs.preview =~ "new_name"
+      assert plan.attrs.preview == "new_name.jpg"
       assert plan.attrs.failed_updates == 0
       refute plan.mark_stale?
       assert plan.remove_broken?
     end
 
-    test "returns stale?: false for recently updated manga" do
+    test "returns stale?: true for not recently updated manga" do
       manga = %Manga{
         name: "X",
         url: "https://mangasource.com/manga/1",
         preview: nil,
         failed_updates: 1,
-        updated_at: NaiveDateTime.utc_now()
+        updated_at: NaiveDateTime.utc_now() |> NaiveDateTime.add(-31, :day)
       }
 
-      defmodule TestDownloader do
-        def download("https://mangasource.com/manga/1"), do: {:ok, "<html>new</html>"}
-      end
+      AttrFetcherMock
+      |> expect(:fetch, fn _manga_attrs ->
+        {:ok, %{name: "X", preview: nil}}
+      end)
 
-      defmodule TestPageParser do
-        def parse(_html, _website), do: {:ok, %{name: "X", preview: nil}}
-      end
-
-      assert {:ok, plan} =
-               Updater.plan_update(manga, %{
-                 downloader: TestDownloader,
-                 page_parser: TestPageParser
-               })
-
-      refute plan.mark_stale?
+      assert {:ok, plan} = Updater.plan_update(manga, AttrFetcherMock)
+      assert plan.mark_stale?
     end
 
-    test "returns error if downloader fails" do
+    test "returns error if fetcher fails" do
       manga = %Manga{
         name: "Y",
         url: "https://mangasource.com/manga/404",
@@ -179,43 +141,10 @@ defmodule MangaWatcher.Manga.UpdaterTest do
         updated_at: NaiveDateTime.utc_now()
       }
 
-      defmodule TestDownloader do
-        def download("https://mangasource.com/manga/404"), do: {:error, :not_found}
-      end
+      AttrFetcherMock
+      |> expect(:fetch, fn _manga_attrs -> {:error, :not_found} end)
 
-      defmodule TestPageParser do
-        def parse(_, _), do: flunk("should not be called")
-      end
-
-      assert {:error, :not_found} =
-               Updater.plan_update(manga, %{
-                 downloader: TestDownloader,
-                 page_parser: TestPageParser
-               })
-    end
-
-    test "returns error if parser fails" do
-      manga = %Manga{
-        name: "Z",
-        url: "https://mangasource.com/manga/bad",
-        preview: nil,
-        failed_updates: 0,
-        updated_at: NaiveDateTime.utc_now()
-      }
-
-      defmodule TestDownloader do
-        def download("https://mangasource.com/manga/bad"), do: {:ok, "<html>bad</html>"}
-      end
-
-      defmodule TestPageParser do
-        def parse(_, _), do: {:error, :parse_failed}
-      end
-
-      assert {:error, :parse_failed} =
-               Updater.plan_update(manga, %{
-                 downloader: TestDownloader,
-                 page_parser: TestPageParser
-               })
+      assert {:error, :not_found} = Updater.plan_update(manga, AttrFetcherMock)
     end
   end
 end

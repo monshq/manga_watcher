@@ -5,6 +5,7 @@ defmodule MangaWatcher.Series do
 
   import Ecto.Query, warn: false
 
+  alias MangaWatcher.Manga.AttrFetcher
   alias MangaWatcher.Series.Tag
   alias MangaWatcher.Series.Manga
   alias MangaWatcher.Series.Website
@@ -55,9 +56,14 @@ defmodule MangaWatcher.Series do
 
     {:ok, website}
   rescue
+    Ecto.NoResultsError ->
+      host = URI.parse(url).host
+      Logger.warning("could not get parser for website #{host}: no record")
+      {:error, "could not get parser for website #{host}"}
+
     e ->
       host = URI.parse(url).host
-      Logger.warning("could not get parser for website #{host}: #{inspect(e)}")
+      Logger.error("could not get parser for website #{host}: #{inspect(e)}")
       {:error, "could not get parser for website #{host}"}
   end
 
@@ -149,7 +155,7 @@ defmodule MangaWatcher.Series do
     cs = Manga.pre_create_changeset(attrs)
 
     if cs.valid? do
-      {:ok, parsed_attrs} = attrs |> Updater.parse_attrs()
+      {:ok, parsed_attrs} = attrs |> AttrFetcher.fetch()
 
       Manga.create_changeset(parsed_attrs)
       |> Repo.insert()
