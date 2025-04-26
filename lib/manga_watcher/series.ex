@@ -170,15 +170,6 @@ defmodule MangaWatcher.Series do
     |> Repo.update(opts)
   end
 
-  def register_manga_scan(%Manga{} = manga) do
-    {updated_count, _} =
-      Manga
-      |> where(id: ^manga.id)
-      |> Repo.update_all(set: [scanned_at: DateTime.utc_now()])
-
-    updated_count == 1
-  end
-
   def refresh_outdated() do
     list_mangas_for_update() |> Repo.preload(:tags) |> Updater.batch_update()
   end

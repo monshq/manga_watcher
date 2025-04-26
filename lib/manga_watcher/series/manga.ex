@@ -11,11 +11,15 @@ defmodule MangaWatcher.Series.Manga do
   import Ecto.Query
 
   schema "mangas" do
-    field :last_chapter, :integer
     field :name, :string
     field :url, :string
     field :failed_updates, :integer, default: 0
     field :preview, :string
+
+    field :last_chapter, :integer
+
+    field :last_chapter_updated_at, :naive_datetime,
+      default: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
     # TODO: remove after data migration
     field :last_read_chapter, :integer
@@ -26,12 +30,8 @@ defmodule MangaWatcher.Series.Manga do
     many_to_many :users, User, join_through: UserManga, on_replace: :delete
 
     timestamps()
-    field :scanned_at, :naive_datetime, default: DateTime.from_unix!(0) |> DateTime.to_naive()
   end
 
-  # From https://tools.ietf.org/html/rfc3986#appendix-B
-  # and https://github.com/elixir-lang/elixir/blob/v1.12.3/lib/elixir/lib/uri.ex#L534
-  # @url_format ~r{^(([a-z][a-z0-9\+\-\.]*):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?}i
   @url_format ~r{^((http|https)://)?[\w\d\.\-\/]+\z}i
 
   def pre_create_changeset(attrs) do
@@ -49,6 +49,7 @@ defmodule MangaWatcher.Series.Manga do
     pre_create_changeset(attrs)
     |> cast(attrs, [:name, :url, :last_chapter, :preview])
     |> unique_constraint(:url)
+    |> put_last_chapter_updated_at()
     |> put_tags_if_changed(attrs)
   end
 
@@ -67,6 +68,7 @@ defmodule MangaWatcher.Series.Manga do
   def update_changeset(manga, attrs) do
     manga
     |> pre_update_changeset(attrs)
+    |> put_last_chapter_updated_at()
     |> put_tags_if_changed(attrs)
     |> put_user_mangas_if_present(attrs)
   end
@@ -105,6 +107,18 @@ defmodule MangaWatcher.Series.Manga do
       cs |> cast_assoc(:user_mangas)
     else
       cs
+    end
+  end
+
+  defp put_last_chapter_updated_at(changeset) do
+    if get_change(changeset, :last_chapter) do
+      put_change(
+        changeset,
+        :last_chapter_updated_at,
+        NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+      )
+    else
+      changeset
     end
   end
 

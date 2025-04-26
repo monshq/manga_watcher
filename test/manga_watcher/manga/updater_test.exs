@@ -12,14 +12,15 @@ defmodule MangaWatcher.Manga.UpdaterTest do
   setup :verify_on_exit!
 
   describe "update/1 — success path" do
-    test "resets failed_updates and persists changes" do
+    test "resets failed_updates, persists changes, updates timestamps" do
       manga =
         manga_fixture(%{
           url: "https://mangasource.com/manga/1",
           preview: nil,
           failed_updates: 2,
           last_chapter: 15,
-          updated_at: ~N[2025-02-01 00:00:00]
+          updated_at: ~N[2025-02-01 00:00:00],
+          last_chapter_updated_at: ~N[2025-01-01 00:00:00]
         })
 
       AttrFetcherMock
@@ -32,14 +33,19 @@ defmodule MangaWatcher.Manga.UpdaterTest do
       assert updated.id == manga.id
       assert updated.failed_updates == 0
       assert updated.preview == "updated_title.jpg"
+      assert updated.last_chapter == 16
 
       reloaded = Repo.get!(Manga, manga.id)
+
       assert reloaded.preview == updated.preview
+      assert NaiveDateTime.after?(reloaded.updated_at, manga.updated_at)
+      assert NaiveDateTime.after?(reloaded.last_chapter_updated_at, manga.last_chapter_updated_at)
     end
 
-    test "does not update updated_at if attributes are unchanged, but still updates scanned_at" do
+    test "changes updated_at if attributes are unchanged and keeps last_chapter_updated_at" do
       inserted_at = ~N[2025-01-01 00:00:00]
       updated_at = ~N[2025-02-01 00:00:00]
+      last_chapter_updated_at = ~N[2025-03-01 00:00:00]
 
       manga =
         manga_fixture(%{
@@ -50,7 +56,7 @@ defmodule MangaWatcher.Manga.UpdaterTest do
           failed_updates: 0,
           inserted_at: inserted_at,
           updated_at: updated_at,
-          scanned_at: ~N[2025-03-01 00:00:00]
+          last_chapter_updated_at: last_chapter_updated_at
         })
 
       AttrFetcherMock
@@ -62,19 +68,27 @@ defmodule MangaWatcher.Manga.UpdaterTest do
 
       reloaded = Repo.get!(Manga, manga.id)
 
-      assert updated.updated_at == updated_at
-      assert reloaded.updated_at == updated_at
-      assert NaiveDateTime.after?(reloaded.scanned_at, ~N[2025-03-01 00:00:00])
+      assert NaiveDateTime.after?(updated.updated_at, manga.updated_at)
+      assert NaiveDateTime.after?(reloaded.updated_at, manga.updated_at)
+
+      assert updated.last_chapter_updated_at == last_chapter_updated_at
+      assert reloaded.last_chapter_updated_at == last_chapter_updated_at
     end
   end
 
   describe "update/1 — failure path" do
     test "increments failed_updates and marks broken past threshold" do
+      minute_ago =
+        NaiveDateTime.utc_now()
+        |> NaiveDateTime.add(-1, :minute)
+        |> NaiveDateTime.truncate(:second)
+
       manga =
         manga_fixture(%{
           url: "https://mangasource.com/manga/1",
           last_chapter: 15,
-          failed_updates: 5
+          failed_updates: 5,
+          updated_at: minute_ago
         })
 
       AttrFetcherMock
@@ -86,6 +100,10 @@ defmodule MangaWatcher.Manga.UpdaterTest do
 
       reloaded = Repo.get!(Manga, manga.id) |> Repo.preload(:tags)
       assert "broken" in Enum.map(reloaded.tags, & &1.name)
+
+      assert NaiveDateTime.after?(errored.updated_at, manga.updated_at)
+      assert NaiveDateTime.after?(reloaded.updated_at, manga.updated_at)
+      assert reloaded.last_chapter_updated_at == manga.last_chapter_updated_at
     end
   end
 

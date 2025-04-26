@@ -19,8 +19,8 @@ defmodule MangaWatcher.SeriesFixtures do
       url: "http://mangasource.com/qwerty",
       preview: nil,
       last_chapter: 1,
-      failed_updates: 0,
-      scanned_at: now
+      last_chapter_updated_at: now,
+      failed_updates: 0
     }
 
     attrs = Map.merge(default_attrs, attrs)

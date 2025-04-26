@@ -55,9 +55,7 @@ defmodule MangaWatcher.Manga.Updater do
   end
 
   defp apply_update_plan(manga, %{attrs: attrs, mark_stale?: stale?, remove_broken?: rb}) do
-    {:ok, updated} = Series.update_manga(manga, attrs)
-
-    true = Series.register_manga_scan(updated)
+    {:ok, updated} = Series.update_manga(manga, attrs, force: true)
 
     if rb, do: Series.remove_manga_tag(updated, "broken")
 
@@ -72,11 +70,7 @@ defmodule MangaWatcher.Manga.Updater do
   end
 
   defp mark_manga_failed(manga) do
-    {:ok, errored} =
-      Series.update_manga(manga, %{
-        failed_updates: manga.failed_updates + 1,
-        scanned_at: DateTime.utc_now()
-      })
+    {:ok, errored} = Series.update_manga(manga, %{failed_updates: manga.failed_updates + 1})
 
     if errored.failed_updates > @failed_updates_allowed do
       Logger.warning("manga #{manga.name} is now broken")
