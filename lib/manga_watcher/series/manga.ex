@@ -21,9 +21,6 @@ defmodule MangaWatcher.Series.Manga do
     field :last_chapter_updated_at, :naive_datetime,
       default: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
-    # TODO: remove after data migration
-    field :last_read_chapter, :integer
-
     many_to_many :tags, Tag, join_through: "manga_tags", on_replace: :delete
 
     has_many :user_mangas, UserManga

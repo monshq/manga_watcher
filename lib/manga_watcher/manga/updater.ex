@@ -8,7 +8,7 @@ defmodule MangaWatcher.Manga.Updater do
   @failed_updates_allowed 5
 
   def batch_update(mangas) do
-    Logger.info("starting update of all mangas")
+    Logger.info("starting update of outdated mangas")
 
     mangas
     |> Enum.group_by(&URI.parse(&1.url).host)

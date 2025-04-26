@@ -123,7 +123,8 @@ defmodule MangaWatcher.Series do
                ^DateTime.shift(DateTime.utc_now(), @update_duration.stale)) or
             (t.name not in ["broken", "completed", "stale"] and
                m.updated_at <
-                 ^DateTime.shift(DateTime.utc_now(), @update_duration.normal))
+                 ^DateTime.shift(DateTime.utc_now(), @update_duration.normal)),
+        group_by: m.id
 
     Repo.all(query)
   end
