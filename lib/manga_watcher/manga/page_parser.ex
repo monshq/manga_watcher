@@ -8,7 +8,7 @@ defmodule MangaWatcher.Manga.PageParser do
   def parse(page, %Website{} = website) do
     {:ok, doc} = Floki.parse_document(page)
 
-    name = Floki.find(doc, website.title_regex) |> Floki.text()
+    name = Floki.find(doc, website.title_regex) |> Floki.text() |> String.trim()
 
     preview =
       Floki.attribute(doc, website.preview_regex, "src")

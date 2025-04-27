@@ -12,11 +12,12 @@ defmodule MangaWatcher.SeriesFixtures do
   Generate a manga.
   """
   def manga_fixture(attrs \\ %{}) do
-    now = NaiveDateTime.local_now()
+    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    id = System.unique_integer([:positive, :monotonic])
 
     default_attrs = %{
       name: "Fixture Manga",
-      url: "http://mangasource.com/qwerty",
+      url: "http://mangasource.com/#{id}",
       preview: nil,
       last_chapter: 1,
       last_chapter_updated_at: now,

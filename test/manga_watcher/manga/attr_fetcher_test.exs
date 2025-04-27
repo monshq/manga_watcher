@@ -1,11 +1,11 @@
 defmodule MangaWatcher.Manga.AttrFetcherTest do
-  alias MangaWatcher.PreviewUploader
-  use MangaWatcher.DataCase, async: false
+  use MangaWatcher.DataCase, async: true
 
   import Mox
   import MangaWatcher.SeriesFixtures
 
   alias MangaWatcher.Manga.AttrFetcher
+  alias MangaWatcher.PreviewUploader
 
   setup do
     website_fixture()
@@ -44,6 +44,7 @@ defmodule MangaWatcher.Manga.AttrFetcherTest do
       assert String.ends_with?(attrs.preview, ".jpg")
     end
 
+    @tag :capture_log
     test "returns error if website cannot be found" do
       manga_attrs = %{
         url: "https://unknownsite.com/manga/1"

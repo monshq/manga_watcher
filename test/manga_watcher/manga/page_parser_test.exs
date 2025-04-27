@@ -1,8 +1,8 @@
 defmodule MangaWatcher.Manga.PageParserTest do
+  use ExUnit.Case, async: true
+
   alias MangaWatcher.Manga.PageParser
   alias MangaWatcher.Series.Website
-
-  use ExUnit.Case, async: true
 
   describe "parse/1" do
     test "correctly parses asuratoon page" do

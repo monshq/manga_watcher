@@ -1,5 +1,5 @@
 defmodule MangaWatcher.Manga.UpdaterTest do
-  use MangaWatcher.DataCase, async: false
+  use MangaWatcher.DataCase, async: true
 
   import MangaWatcher.SeriesFixtures
   import Mox
@@ -15,8 +15,6 @@ defmodule MangaWatcher.Manga.UpdaterTest do
     test "resets failed_updates, persists changes, updates timestamps" do
       manga =
         manga_fixture(%{
-          url: "https://mangasource.com/manga/1",
-          preview: nil,
           failed_updates: 2,
           last_chapter: 15,
           updated_at: ~N[2025-02-01 00:00:00],
@@ -50,7 +48,6 @@ defmodule MangaWatcher.Manga.UpdaterTest do
       manga =
         manga_fixture(%{
           name: "Same Name",
-          url: "https://mangasource.com/manga/1",
           preview: "same_name.jpg",
           last_chapter: 15,
           failed_updates: 0,
@@ -77,6 +74,7 @@ defmodule MangaWatcher.Manga.UpdaterTest do
   end
 
   describe "update/1 — failure path" do
+    @tag :capture_log
     test "increments failed_updates and marks broken past threshold" do
       minute_ago =
         NaiveDateTime.utc_now()
@@ -85,7 +83,6 @@ defmodule MangaWatcher.Manga.UpdaterTest do
 
       manga =
         manga_fixture(%{
-          url: "https://mangasource.com/manga/1",
           last_chapter: 15,
           failed_updates: 5,
           updated_at: minute_ago
@@ -111,8 +108,6 @@ defmodule MangaWatcher.Manga.UpdaterTest do
     test "returns update plan for fresh manga with preview" do
       manga = %Manga{
         name: "Old Name",
-        url: "https://mangasource.com/manga/1",
-        preview: nil,
         failed_updates: 3,
         last_chapter: 9,
         updated_at: ~N[2024-12-01 00:00:00]
@@ -134,9 +129,6 @@ defmodule MangaWatcher.Manga.UpdaterTest do
 
     test "returns stale?: true for not recently updated manga" do
       manga = %Manga{
-        name: "X",
-        url: "https://mangasource.com/manga/1",
-        preview: nil,
         failed_updates: 1,
         updated_at: NaiveDateTime.utc_now() |> NaiveDateTime.add(-31, :day)
       }
@@ -152,10 +144,6 @@ defmodule MangaWatcher.Manga.UpdaterTest do
 
     test "returns error if fetcher fails" do
       manga = %Manga{
-        name: "Y",
-        url: "https://mangasource.com/manga/404",
-        preview: nil,
-        failed_updates: 0,
         updated_at: NaiveDateTime.utc_now()
       }
 

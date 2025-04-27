@@ -1,4 +1,4 @@
-# Manga Watcher
+# Manga Watcher [![Elixir CI](https://github.com/monshq/manga_watcher/actions/workflows/mix_check.yml/badge.svg)](https://github.com/monshq/manga_watcher/actions/workflows/mix_check.yml) [![Coverage Status](https://coveralls.io/repos/github/monshq/manga_watcher/badge.svg?branch=master)](https://coveralls.io/github/monshq/manga_watcher?branch=master)
 
 If you read a lot of ongoing mangas / manhwas, then you probably had difficulties keeping in memory what chapter you stopped at. This project does this for you. You enter manga url, application parses the page and gets manga title, preview and last chapter. Then it scans the page periodically and shows you when there are new chapters you haven't read yet:
 

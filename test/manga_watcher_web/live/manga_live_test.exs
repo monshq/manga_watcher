@@ -6,6 +6,7 @@ defmodule MangaWatcherWeb.MangaLiveTest do
 
   alias MangaWatcher.Accounts
   alias MangaWatcher.Series
+  alias MangaWatcher.UserMangas
 
   @create_attrs %{url: "http://mangasource.com", tags: "shoujo-ai, yuri"}
   @update_attrs %{url: "http://mangasource.com", tags: "seinen"}
@@ -76,6 +77,18 @@ defmodule MangaWatcherWeb.MangaLiveTest do
       m = Series.get_manga!(manga.id)
       assert m.url == @update_attrs[:url]
       assert Enum.map_join(m.tags, ", ", fn t -> t.name end) == "seinen"
+    end
+
+    test "marks manga as read", %{conn: conn, manga: manga, user: user} do
+      {:ok, index_live, _html} = live(conn, ~p"/mangas")
+      user_manga = UserMangas.get_manga!(user.id, manga.id).user_mangas |> hd()
+
+      refute index_live |> element("#mangas-#{manga.id} button", "Mark as read") |> render_click() =~
+               "Mark as read"
+
+      updated_um = UserMangas.get_manga!(user.id, manga.id).user_mangas |> hd()
+      refute user_manga.last_read_chapter == updated_um.last_read_chapter
+      assert updated_um.last_read_chapter == manga.last_chapter
     end
 
     test "filters mangas in listing", %{conn: conn, manga: manga, user: user} do

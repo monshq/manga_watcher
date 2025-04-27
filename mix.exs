@@ -10,6 +10,7 @@ defmodule MangaWatcher.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      test_coverage: [tool: ExCoveralls],
       releases: [
         manga_watcher: [
           include_executables_for: [:unix]
@@ -60,6 +61,9 @@ defmodule MangaWatcher.MixProject do
       {:waffle, "~> 1.1"},
       {:waffle_ecto, "~> 0.0"},
       {:mox, "~> 1.0", only: :test},
+      {:excoveralls, "~> 0.13", only: :test},
+      {:bypass, "~> 2.1", only: :test},
+      {:sobelow, "~> 0.13", only: ~w(dev test)a, runtime: false},
       {:credo, "~> 1.7", only: ~w(dev test)a, runtime: false},
       {:ex_check, "~> 0.14.0", only: ~w(dev test)a, runtime: false}
     ]
