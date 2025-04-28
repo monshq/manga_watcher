@@ -1,16 +1,27 @@
+# run this as `iex -S mix run script/asura_finder.exs`
 defmodule MangaWatcher.Manga.AsuraFinder do
   alias MangaWatcher.Series
   alias MangaWatcher.Series.Manga
+  alias MangaWatcher.Repo
   alias MangaWatcher.Manga.Downloader
   alias MangaWatcher.Utils
 
   require Logger
 
+  import Ecto.Query, warn: false
+
   def update_urls() do
-    Enum.each(Series.broken_asura_mangas(), fn m ->
+    Enum.each(broken_asura_mangas(), fn m ->
       update_url(m)
       Process.sleep(1000)
     end)
+  end
+
+  def broken_asura_mangas() do
+    Manga
+    |> where(fragment("failed_updates > 5"))
+    |> where(fragment("url ilike '%asura%'"))
+    |> Repo.all()
   end
 
   def update_url(%Manga{name: name} = m) do

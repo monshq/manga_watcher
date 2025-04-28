@@ -6,6 +6,7 @@ defmodule MangaWatcher.SeriesFixtures do
   """
 
   alias MangaWatcher.Series.Manga
+  alias MangaWatcher.Series
   alias MangaWatcher.Repo
 
   @doc """
@@ -30,14 +31,28 @@ defmodule MangaWatcher.SeriesFixtures do
     |> Repo.insert!()
   end
 
+  def manga_fixture_with_tags(attrs \\ %{}) do
+    m = manga_fixture(attrs |> Map.delete(:tags))
+
+    updated =
+      for t <- attrs[:tags] do
+        {:ok, updated_manga} = Series.add_manga_tag(m, t)
+        updated_manga
+      end
+
+    List.last(updated) || m
+  end
+
   @doc """
   Generate a manga with user_manga association with user.
   """
   def manga_for_user_fixture(user, attrs \\ %{}) do
+    id = System.unique_integer([:positive, :monotonic])
+
     {:ok, manga} =
       attrs
       |> Enum.into(%{
-        url: "http://mangasource.com/qwerty"
+        url: "http://mangasource.com/qwerty/#{id}"
       })
       |> MangaWatcher.Series.create_manga()
 

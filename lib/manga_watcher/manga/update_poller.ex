@@ -2,6 +2,7 @@ defmodule MangaWatcher.Manga.UpdatePoller do
   use GenServer
 
   alias MangaWatcher.Series
+  alias MangaWatcher.Manga.Updater
 
   # seconds
   @interval 60
@@ -18,7 +19,7 @@ defmodule MangaWatcher.Manga.UpdatePoller do
 
   @impl true
   def handle_info(:tick, state) do
-    Series.refresh_outdated()
+    Series.list_mangas_for_update() |> Updater.batch_update()
     Process.send_after(self(), :tick, @interval * 1000)
     {:noreply, state}
   end

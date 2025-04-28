@@ -38,26 +38,16 @@ defmodule MangaWatcher.UserMangas do
         where: t.name in ^exclude_tags,
         select: m.id
 
-    common_query =
+    query =
       from m in Manga,
         join: um in assoc(m, :user_mangas),
         where: um.user_id == ^user_id,
         where: m.id not in subquery(exclude_query),
-        group_by: [m.id, um.last_read_chapter],
+        left_join: t in assoc(m, :tags),
+        where: fragment("cardinality(?::text[]) = 0", ^include_tags) or t.name in ^include_tags,
+        distinct: m.id,
         order_by: [desc: m.last_chapter - um.last_read_chapter, desc: :updated_at],
         preload: :user_mangas
-
-    query =
-      case include_tags do
-        [] ->
-          from m in common_query,
-            left_join: t in assoc(m, :tags)
-
-        _ ->
-          from m in common_query,
-            left_join: t in assoc(m, :tags),
-            where: t.name in ^include_tags
-      end
 
     Repo.all(query)
   end

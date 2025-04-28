@@ -5,12 +5,11 @@ defmodule MangaWatcher.Series do
 
   import Ecto.Query, warn: false
 
-  alias MangaWatcher.Manga.AttrFetcher
   alias MangaWatcher.Series.Tag
   alias MangaWatcher.Series.Manga
   alias MangaWatcher.Series.Website
-  alias MangaWatcher.Manga.Updater
   alias MangaWatcher.Repo
+  alias MangaWatcher.Manga.AttrFetcher
 
   require Logger
 
@@ -35,7 +34,7 @@ defmodule MangaWatcher.Series do
         select: %{
           id: w.id,
           total: count(m.id, :distinct),
-          broken: fragment("COUNT(DISTINCT CASE WHEN ? = ? THEN ? END)", t.name, "broken", m.id)
+          broken: fragment("COUNT(DISTINCT ?) FILTER (WHERE ? = ?)", m.id, t.name, "broken")
         }
 
     Repo.all(query)
@@ -49,22 +48,14 @@ defmodule MangaWatcher.Series do
   def get_website_for_url(url) do
     uri = URI.parse(url)
 
-    website =
-      Website
-      |> where(base_url: ^uri.host)
-      |> Repo.one!()
+    case Repo.one(from w in Website, where: w.base_url == ^uri.host) do
+      nil ->
+        Logger.warning("no parser for website #{uri.host}")
+        {:error, "no parser for website #{uri.host}"}
 
-    {:ok, website}
-  rescue
-    Ecto.NoResultsError ->
-      host = URI.parse(url).host
-      Logger.warning("could not get parser for website #{host}: no record")
-      {:error, "could not get parser for website #{host}"}
-
-    e ->
-      host = URI.parse(url).host
-      Logger.error("could not get parser for website #{host}: #{inspect(e)}")
-      {:error, "could not get parser for website #{host}"}
+      website ->
+        {:ok, website}
+    end
   end
 
   def create_website(attrs \\ %{}) do
@@ -114,17 +105,30 @@ defmodule MangaWatcher.Series do
   end
 
   def list_mangas_for_update() do
+    exclude_ids_query =
+      from m in Manga,
+        join: t in assoc(m, :tags),
+        where: t.name in ["broken", "completed"],
+        select: m.id,
+        distinct: true
+
+    stale_manga_ids_query =
+      from m in Manga,
+        join: t in assoc(m, :tags),
+        where: t.name == "stale",
+        select: m.id,
+        distinct: true
+
+    stale_cutoff = NaiveDateTime.shift(NaiveDateTime.utc_now(), @update_duration.stale)
+    normal_cutoff = NaiveDateTime.shift(NaiveDateTime.utc_now(), @update_duration.normal)
+
     query =
       from m in Manga,
-        left_join: t in assoc(m, :tags),
+        where: m.id not in subquery(exclude_ids_query),
         where:
-          (t.name in ["stale"] and
-             m.updated_at <
-               ^DateTime.shift(DateTime.utc_now(), @update_duration.stale)) or
-            (t.name not in ["broken", "completed", "stale"] and
-               m.updated_at <
-                 ^DateTime.shift(DateTime.utc_now(), @update_duration.normal)),
-        group_by: m.id
+          (m.id in subquery(stale_manga_ids_query) and m.updated_at < ^stale_cutoff) or
+            (m.id not in subquery(stale_manga_ids_query) and m.updated_at < ^normal_cutoff),
+        preload: :tags
 
     Repo.all(query)
   end
@@ -169,10 +173,6 @@ defmodule MangaWatcher.Series do
     manga
     |> Manga.update_changeset(attrs)
     |> Repo.update(opts)
-  end
-
-  def refresh_outdated() do
-    list_mangas_for_update() |> Repo.preload(:tags) |> Updater.batch_update()
   end
 
   def delete_manga(%Manga{} = manga) do

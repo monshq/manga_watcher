@@ -83,10 +83,54 @@ defmodule MangaWatcher.SeriesTest do
       assert %Ecto.Changeset{} = Series.change_manga(manga)
     end
 
-    test "refresh_outdated/0 doesn't throw errors" do
-      manga = manga_fixture()
-      assert :ok = Series.refresh_outdated()
-      assert [manga] == Series.list_mangas()
+    test "list_mangas_for_update/0 returns only mangas that need updates" do
+      now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+      # Manga with "stale" tag and old enough
+      stale_manga =
+        manga_fixture_with_tags(%{
+          updated_at: NaiveDateTime.add(now, -2, :day),
+          tags: ["stale"]
+        })
+
+      # Manga with "stale" tag but updated recently
+      fresh_stale_manga =
+        manga_fixture_with_tags(%{
+          updated_at: NaiveDateTime.add(now, -12, :hour),
+          tags: ["stale", "fresh_wink"]
+        })
+
+      # Manga without "stale" tag and old enough
+      normal_manga =
+        manga_fixture_with_tags(%{
+          updated_at: NaiveDateTime.add(now, -15, :day),
+          tags: []
+        })
+
+      # Manga without "stale" tag but updated recently
+      fresh_normal_manga =
+        manga_fixture_with_tags(%{
+          updated_at: NaiveDateTime.add(now, -15, :minute),
+          tags: []
+        })
+
+      # Manga with "broken" tag, should be excluded regardless of other tags
+      broken_manga =
+        manga_fixture_with_tags(%{
+          updated_at: NaiveDateTime.add(now, -365, :day),
+          tags: ["broken", "stale", "fresh_wink"]
+        })
+
+      result = Series.list_mangas_for_update()
+
+      result_ids = ids(result)
+
+      assert stale_manga.id in result_ids
+      assert normal_manga.id in result_ids
+
+      refute fresh_stale_manga.id in result_ids
+      refute fresh_normal_manga.id in result_ids
+      refute broken_manga.id in result_ids
     end
   end
 
