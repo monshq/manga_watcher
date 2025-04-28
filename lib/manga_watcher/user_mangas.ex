@@ -7,18 +7,13 @@ defmodule MangaWatcher.UserMangas do
 
   alias MangaWatcher.Series.Manga
   alias MangaWatcher.Series.UserManga
-  alias MangaWatcher.Series
   alias MangaWatcher.Repo
 
   require Logger
 
-  # USER MANGAS
-
   def create_user_manga(attrs) do
     attrs |> UserManga.create_changeset() |> Repo.insert()
   end
-
-  # MANGAS
 
   def list_mangas(user_id) do
     query =
@@ -62,34 +57,6 @@ defmodule MangaWatcher.UserMangas do
         preload: [tags: t, user_mangas: um]
 
     Repo.one!(query)
-  end
-
-  def add_manga(user_id, attrs \\ %{}) do
-    case get_or_create_manga(attrs) do
-      {:ok, manga} ->
-        case create_user_manga(%{
-               manga_id: manga.id,
-               user_id: user_id,
-               last_read_chapter: manga.last_chapter
-             }) do
-          {:ok, user_manga} ->
-            {:ok, %{user_manga | manga: Series.get_manga!(manga.id)}}
-
-          error ->
-            error
-        end
-
-      error ->
-        error
-    end
-  end
-
-  defp get_or_create_manga(attrs) do
-    if manga = Series.get_manga(%{url: attrs[:url]}) do
-      {:ok, manga}
-    else
-      Series.create_manga(attrs)
-    end
   end
 
   def update_user_manga(%UserManga{} = user_manga, attrs) do

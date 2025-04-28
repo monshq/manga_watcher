@@ -7,14 +7,8 @@ defmodule MangaWatcher.SeriesTest do
     alias MangaWatcher.Series.Manga
 
     import MangaWatcher.SeriesFixtures
-    import MangaWatcher.AccountsFixtures
 
     @invalid_attrs %{last_chapter: nil, last_read_chapter: nil, name: nil, url: nil}
-
-    setup do
-      website_fixture()
-      {:ok, user: user_fixture()}
-    end
 
     def ids(records) do
       records |> Enum.map(& &1.id) |> Enum.sort()
@@ -31,14 +25,18 @@ defmodule MangaWatcher.SeriesTest do
     end
 
     test "create_manga/1 with valid data creates a manga" do
-      valid_attrs = %{url: "http://mangasource.com/url"}
+      valid_attrs = default_manga_attrs()
 
       assert {:ok, %Manga{} = manga} = Series.create_manga(valid_attrs)
-      assert manga.url == "http://mangasource.com/url"
+      assert manga.url == valid_attrs.url
     end
 
     test "create_manga/1 with tags creates a manga and tags" do
-      valid_attrs = %{url: "http://mangasource.com/url", tags: "shoujo-ai, yuri"}
+      valid_attrs =
+        Map.merge(default_manga_attrs(), %{
+          url: "http://mangasource.com/url",
+          tags: "shoujo-ai, yuri"
+        })
 
       assert {:ok, %Manga{} = manga} = Series.create_manga(valid_attrs)
       assert manga.url == "http://mangasource.com/url"

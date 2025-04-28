@@ -20,6 +20,7 @@ defmodule MangaWatcher.Series.UserManga do
     %__MODULE__{}
     |> cast(attrs, [:user_id, :manga_id, :last_read_chapter])
     |> unique_constraint(:user_manga_already_exists, name: "user_mangas_pkey")
+    |> foreign_key_constraint(:user_does_not_exist, name: "user_mangas_user_id_fkey")
   end
 
   def changeset(user_manga, attrs) do

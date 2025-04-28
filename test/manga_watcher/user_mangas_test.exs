@@ -2,14 +2,12 @@ defmodule MangaWatcher.UserMangasTest do
   use MangaWatcher.DataCase
 
   alias MangaWatcher.UserMangas
-  alias MangaWatcher.Series.UserManga
 
   describe "mangas" do
     import MangaWatcher.SeriesFixtures
     import MangaWatcher.AccountsFixtures
 
     setup do
-      website_fixture()
       {:ok, user: user_fixture()}
     end
 
@@ -74,27 +72,6 @@ defmodule MangaWatcher.UserMangasTest do
       assert_raise(Ecto.NoResultsError, fn ->
         UserMangas.get_manga!(user.id + 1, manga.id)
       end)
-    end
-
-    test "add_manga/2 with new manga creates a manga", %{user: user} do
-      valid_attrs = %{url: "http://mangasource.com/url"}
-
-      assert {:ok, %UserManga{} = user_manga} = UserMangas.add_manga(user.id, valid_attrs)
-      assert user_manga.user_id == user.id
-      assert user_manga.manga.url == "http://mangasource.com/url"
-    end
-
-    test "add_manga/2 with existing manga assigns existing manga", %{user: user} do
-      manga = manga_fixture()
-      attrs = %{url: manga.url}
-
-      assert {:ok, %UserManga{} = user_manga} = UserMangas.add_manga(user.id, attrs)
-      assert user_manga.user_id == user.id
-      assert user_manga.manga.id == manga.id
-    end
-
-    test "add_manga/2 with invalid data returns error changeset", %{user: user} do
-      assert {:error, %Ecto.Changeset{}} = UserMangas.add_manga(user.id, %{url: ""})
     end
   end
 end

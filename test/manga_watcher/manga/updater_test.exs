@@ -14,7 +14,7 @@ defmodule MangaWatcher.Manga.UpdaterTest do
   describe "update/1 — success path" do
     test "resets failed_updates, persists changes, updates timestamps" do
       manga =
-        manga_fixture(%{
+        manga_raw_fixture(%{
           failed_updates: 2,
           last_chapter: 15,
           updated_at: ~N[2025-02-01 00:00:00],
@@ -46,7 +46,7 @@ defmodule MangaWatcher.Manga.UpdaterTest do
       last_chapter_updated_at = ~N[2025-03-01 00:00:00]
 
       manga =
-        manga_fixture(%{
+        manga_raw_fixture(%{
           name: "Same Name",
           preview: "same_name.jpg",
           last_chapter: 15,
@@ -82,7 +82,7 @@ defmodule MangaWatcher.Manga.UpdaterTest do
         |> NaiveDateTime.truncate(:second)
 
       manga =
-        manga_fixture(%{
+        manga_raw_fixture(%{
           last_chapter: 15,
           failed_updates: 5,
           updated_at: minute_ago

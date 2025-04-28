@@ -9,14 +9,11 @@ defmodule MangaWatcher.SeriesFixtures do
   alias MangaWatcher.Series
   alias MangaWatcher.Repo
 
-  @doc """
-  Generate a manga.
-  """
-  def manga_fixture(attrs \\ %{}) do
+  def default_manga_attrs() do
     now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
     id = System.unique_integer([:positive, :monotonic])
 
-    default_attrs = %{
+    %{
       name: "Fixture Manga",
       url: "http://mangasource.com/#{id}",
       preview: nil,
@@ -24,37 +21,47 @@ defmodule MangaWatcher.SeriesFixtures do
       last_chapter_updated_at: now,
       failed_updates: 0
     }
+  end
 
-    attrs = Map.merge(default_attrs, attrs)
+  @doc """
+  Generate a manga.
+  """
+  def manga_fixture(attrs \\ %{}) do
+    attrs = Map.merge(default_manga_attrs(), attrs)
 
-    struct(Manga, attrs)
-    |> Repo.insert!()
+    {:ok, manga} =
+      MangaWatcher.Series.create_manga(attrs)
+
+    manga
+  end
+
+  @doc """
+  Generate a manga without validations.
+  """
+  def manga_raw_fixture(attrs \\ %{}) do
+    attrs = Map.merge(default_manga_attrs(), attrs)
+
+    struct(Manga, attrs) |> Repo.insert!()
   end
 
   def manga_fixture_with_tags(attrs \\ %{}) do
-    m = manga_fixture(attrs |> Map.delete(:tags))
+    manga = manga_raw_fixture(attrs |> Map.delete(:tags))
 
-    updated =
-      for t <- attrs[:tags] do
-        {:ok, updated_manga} = Series.add_manga_tag(m, t)
-        updated_manga
-      end
+    for t <- attrs[:tags] do
+      {:ok, _updated_manga} = Series.add_manga_tag(manga, t)
+    end
 
-    List.last(updated) || m
+    manga
   end
 
   @doc """
   Generate a manga with user_manga association with user.
   """
   def manga_for_user_fixture(user, attrs \\ %{}) do
-    id = System.unique_integer([:positive, :monotonic])
+    attrs = Map.merge(default_manga_attrs(), attrs)
 
     {:ok, manga} =
-      attrs
-      |> Enum.into(%{
-        url: "http://mangasource.com/qwerty/#{id}"
-      })
-      |> MangaWatcher.Series.create_manga()
+      MangaWatcher.Series.create_manga(attrs)
 
     {:ok, _user_manga} =
       MangaWatcher.UserMangas.create_user_manga(%{manga_id: manga.id, user_id: user.id})

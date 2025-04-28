@@ -9,7 +9,6 @@ defmodule MangaWatcher.Series do
   alias MangaWatcher.Series.Manga
   alias MangaWatcher.Series.Website
   alias MangaWatcher.Repo
-  alias MangaWatcher.Manga.AttrFetcher
 
   require Logger
 
@@ -48,13 +47,17 @@ defmodule MangaWatcher.Series do
   def get_website_for_url(url) do
     uri = URI.parse(url)
 
-    case Repo.one(from w in Website, where: w.base_url == ^uri.host) do
-      nil ->
-        Logger.warning("no parser for website #{uri.host}")
-        {:error, "no parser for website #{uri.host}"}
+    if is_nil(uri.host) do
+      {:error, "website host is empty"}
+    else
+      case Repo.one(from w in Website, where: w.base_url == ^uri.host) do
+        nil ->
+          Logger.warning("no parser for website #{uri.host}")
+          {:error, "no parser for website #{uri.host}"}
 
-      website ->
-        {:ok, website}
+        website ->
+          {:ok, website}
+      end
     end
   end
 
@@ -133,13 +136,6 @@ defmodule MangaWatcher.Series do
     Repo.all(query)
   end
 
-  def broken_asura_mangas() do
-    Manga
-    |> where(fragment("failed_updates > 5"))
-    |> where(fragment("url ilike '%asura%'"))
-    |> Repo.all()
-  end
-
   def get_manga(attrs) do
     Manga
     |> preload([:tags, :user_mangas])
@@ -157,16 +153,9 @@ defmodule MangaWatcher.Series do
   end
 
   def create_manga(attrs \\ %{}) do
-    cs = Manga.pre_create_changeset(attrs)
-
-    if cs.valid? do
-      {:ok, parsed_attrs} = attrs |> AttrFetcher.fetch()
-
-      Manga.create_changeset(parsed_attrs)
-      |> Repo.insert()
-    else
-      Repo.insert(cs)
-    end
+    attrs
+    |> Manga.create_changeset()
+    |> Repo.insert()
   end
 
   def update_manga(%Manga{} = manga, attrs, opts \\ []) do
