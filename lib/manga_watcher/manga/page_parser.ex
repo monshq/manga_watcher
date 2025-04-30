@@ -8,7 +8,14 @@ defmodule MangaWatcher.Manga.PageParser do
   def parse(page, %Website{} = website) do
     {:ok, doc} = Floki.parse_document(page)
 
-    name = Floki.find(doc, website.title_regex) |> Floki.text() |> String.trim()
+    [{_tag, _attrs, name_children}] = Floki.find(doc, website.title_regex)
+
+    # ignore nested tags, it's likely they are not part of a name but labels like "HOT"
+    name =
+      name_children
+      |> Enum.filter(&is_binary/1)
+      |> Enum.map_join(" ", &String.trim/1)
+      |> String.trim()
 
     preview =
       Floki.attribute(doc, website.preview_regex, "src")
