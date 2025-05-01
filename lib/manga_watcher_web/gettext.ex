@@ -20,5 +20,5 @@ defmodule MangaWatcherWeb.Gettext do
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
-  use Gettext, otp_app: :manga_watcher
+  use Gettext.Backend, otp_app: :manga_watcher
 end

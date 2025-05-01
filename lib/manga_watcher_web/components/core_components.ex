@@ -17,7 +17,7 @@ defmodule MangaWatcherWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import MangaWatcherWeb.Gettext
+  use Gettext, backend: MangaWatcherWeb.Gettext
 
   embed_templates "partials/*"
 

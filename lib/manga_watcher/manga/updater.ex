@@ -38,7 +38,7 @@ defmodule MangaWatcher.Manga.Updater do
         apply_update_plan(manga, plan)
 
       {:error, reason} ->
-        Logger.error("could not update manga #{manga.name}: #{reason}")
+        Logger.error("could not update manga #{manga.name}: #{inspect(reason)}")
         mark_manga_failed(manga)
     end
   end
