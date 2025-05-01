@@ -7,6 +7,7 @@ defmodule MangaWatcher.SeriesFixtures do
 
   alias MangaWatcher.Series.Manga
   alias MangaWatcher.Series
+  alias MangaWatcher.UserMangas
   alias MangaWatcher.Repo
 
   def default_manga_attrs() do
@@ -57,14 +58,13 @@ defmodule MangaWatcher.SeriesFixtures do
   @doc """
   Generate a manga with user_manga association with user.
   """
-  def manga_for_user_fixture(user, attrs \\ %{}) do
-    attrs = Map.merge(default_manga_attrs(), attrs)
+  def manga_for_user_fixture(user, original_attrs \\ %{}) do
+    attrs = Map.merge(default_manga_attrs(), original_attrs |> Map.delete(:user_manga))
+    {:ok, manga} = Series.create_manga(attrs)
 
-    {:ok, manga} =
-      MangaWatcher.Series.create_manga(attrs)
-
-    {:ok, _user_manga} =
-      MangaWatcher.UserMangas.create_user_manga(%{manga_id: manga.id, user_id: user.id})
+    default_user_manga_attrs = %{manga_id: manga.id, user_id: user.id}
+    user_manga_attrs = Map.merge(default_user_manga_attrs, original_attrs[:user_manga] || %{})
+    {:ok, _user_manga} = UserMangas.create_user_manga(user_manga_attrs)
 
     manga
   end

@@ -12,7 +12,7 @@ defmodule MangaWatcher.UserMangasTest do
     end
 
     def ids(records) do
-      records |> Enum.map(& &1.id) |> Enum.sort()
+      records |> Enum.map(& &1.id)
     end
 
     test "filter_mangas/3 returns all user mangas with empty input", %{user: user} do
@@ -47,18 +47,29 @@ defmodule MangaWatcher.UserMangasTest do
       m2 = manga_for_user_fixture(user, %{url: "http://mangasource.com/2", tags: "shoujo"})
       _m3 = manga_for_user_fixture(user, %{url: "http://mangasource.com/3", tags: "josei"})
 
-      assert ids(UserMangas.filter_mangas(user.id, ["seinen", "shoujo"], ["school", "josei"])) ==
-               [
-                 m2.id
-               ]
+      mangas = UserMangas.filter_mangas(user.id, ["seinen", "shoujo"], ["school", "josei"])
+      assert ids(mangas) == [m2.id]
     end
 
-    test "list_mangas/0 returns all user mangas", %{user: user} do
-      m1 = manga_for_user_fixture(user, %{url: "http://mangasource.com/1", tags: "seinen"})
+    test "filter_mangas/3 returns all user mangas in correct order", %{user: user} do
+      m1 = manga_for_user_fixture(user, %{last_chapter: 10, user_manga: %{last_read_chapter: 7}})
+      m2 = manga_for_user_fixture(user, %{last_chapter: 15, user_manga: %{last_read_chapter: 13}})
+      m3 = manga_for_user_fixture(user, %{last_chapter: 20, user_manga: %{last_read_chapter: 19}})
 
-      manga_for_user_fixture(user_fixture(), %{url: "http://mangasource.com/2", tags: "seinen"})
+      manga_for_user_fixture(user_fixture(), %{})
 
-      assert ids(UserMangas.list_mangas(user.id)) == [m1.id]
+      mangas = UserMangas.filter_mangas(user.id, [], [])
+      assert ids(mangas) == ids([m1, m2, m3])
+    end
+
+    test "list_mangas/0 returns all user mangas in correct order", %{user: user} do
+      m1 = manga_for_user_fixture(user, %{last_chapter: 10, user_manga: %{last_read_chapter: 7}})
+      m2 = manga_for_user_fixture(user, %{last_chapter: 15, user_manga: %{last_read_chapter: 13}})
+      m3 = manga_for_user_fixture(user, %{last_chapter: 20, user_manga: %{last_read_chapter: 19}})
+
+      manga_for_user_fixture(user_fixture(), %{})
+
+      assert ids(UserMangas.list_mangas(user.id)) == ids([m1, m2, m3])
     end
 
     test "get_manga!/2 returns the manga for user", %{user: user} do

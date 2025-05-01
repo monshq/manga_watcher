@@ -40,7 +40,7 @@ defmodule MangaWatcher.UserMangas do
         where: m.id not in subquery(exclude_query),
         left_join: t in assoc(m, :tags),
         where: fragment("cardinality(?::text[]) = 0", ^include_tags) or t.name in ^include_tags,
-        distinct: m.id,
+        group_by: [m.id, um.last_read_chapter],
         order_by: [desc: m.last_chapter - um.last_read_chapter, desc: :updated_at],
         preload: :user_mangas
 
