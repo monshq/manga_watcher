@@ -87,6 +87,15 @@ defmodule MangaWatcher.Series do
     Repo.all(Tag)
   end
 
+  def manga_has_tag?(manga, tag) do
+    tag_names = load_manga_tags(manga).tags |> Enum.map(& &1.name)
+    tag in tag_names
+  end
+
+  def load_manga_tags(%Manga{tags: tags} = manga) when is_list(tags), do: manga
+
+  def load_manga_tags(%Manga{} = manga), do: Repo.preload(manga, :tags)
+
   # MANGAS
 
   def add_manga_tag(manga, tag_name) do

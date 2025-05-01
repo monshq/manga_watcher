@@ -61,6 +61,10 @@ defmodule MangaWatcher.Manga.Updater do
 
     {:ok, updated} =
       if stale? do
+        if Series.manga_has_tag?(manga, "stale") do
+          Logger.warning("manga #{manga.name} is now stale")
+        end
+
         Series.add_manga_tag(updated, "stale")
       else
         Series.remove_manga_tag(updated, "stale")
