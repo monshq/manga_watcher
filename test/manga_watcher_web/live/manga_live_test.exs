@@ -13,7 +13,7 @@ defmodule MangaWatcherWeb.MangaLiveTest do
   @invalid_attrs %{url: ""}
 
   defp create_manga(opts) do
-    _website = website_fixture()
+    _website = website_fixture(%{base_url: "http://mangasource.com"})
     manga = manga_for_user_fixture(opts.user)
     %{manga: manga}
   end

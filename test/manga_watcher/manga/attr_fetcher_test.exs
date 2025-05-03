@@ -8,7 +8,7 @@ defmodule MangaWatcher.Manga.AttrFetcherTest do
   alias MangaWatcher.PreviewUploader
 
   setup do
-    website_fixture()
+    website_fixture(base_url: "mangasource.com")
     verify_on_exit!()
   end
 

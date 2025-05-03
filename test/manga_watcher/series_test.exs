@@ -139,9 +139,13 @@ defmodule MangaWatcher.SeriesTest do
 
     @invalid_attrs %{base_url: nil, title_regex: nil, links_regex: nil}
 
-    test "list_websites/0 returns all websites" do
-      website = website_fixture()
-      assert Series.list_websites() == [website]
+    test "list_websites/0 returns websites sorted by mangas count" do
+      website1 = website_fixture()
+      manga_fixture(%{url: website1.base_url <> "/1"})
+      website2 = website_fixture()
+      manga_fixture(%{url: website2.base_url <> "/2"})
+      manga_fixture(%{url: website2.base_url <> "/3"})
+      assert Series.list_websites() == [website2, website1]
     end
 
     test "get_website!/1 returns the website with given id" do

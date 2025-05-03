@@ -73,10 +73,12 @@ defmodule MangaWatcher.SeriesFixtures do
   Generate a website.
   """
   def website_fixture(attrs \\ %{}) do
+    id = System.unique_integer([:positive, :monotonic])
+
     {:ok, website} =
       attrs
       |> Enum.into(%{
-        base_url: "mangasource.com",
+        base_url: "mangasource#{id}.com",
         links_regex: "#chapterlist a",
         title_regex: "h1.entry-title",
         preview_regex: ".thumbook img"

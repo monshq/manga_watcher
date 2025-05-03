@@ -20,7 +20,14 @@ defmodule MangaWatcher.Series do
   # SOURCES
 
   def list_websites do
-    Repo.all(Website)
+    query =
+      from w in Website,
+        left_join: m in Manga,
+        on: like(m.url, fragment("'%' || ? || '%'", w.base_url)),
+        group_by: w.id,
+        order_by: [desc: count(m)]
+
+    Repo.all(query)
   end
 
   def website_counts do
