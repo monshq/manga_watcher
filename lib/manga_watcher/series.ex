@@ -134,7 +134,7 @@ defmodule MangaWatcher.Series do
     stale_manga_ids_query =
       from m in Manga,
         join: t in assoc(m, :tags),
-        where: t.name == "stale",
+        where: t.name in ["stale", "slow-burner"],
         select: m.id,
         distinct: true
 
