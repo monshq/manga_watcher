@@ -29,7 +29,7 @@ defmodule MangaWatcher.Series.Manga do
     timestamps()
   end
 
-  @url_format ~r{^((http|https)://)?[\w\d\.\-\/]+\z}i
+  @url_format ~r{^((http|https)://)?[\w\d\.\-\/']+\z}i
 
   def pre_create_changeset(attrs) do
     %__MODULE__{}
