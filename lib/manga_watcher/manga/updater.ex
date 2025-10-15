@@ -61,7 +61,7 @@ defmodule MangaWatcher.Manga.Updater do
 
     {:ok, updated} =
       if stale? do
-        if Series.manga_has_tag?(manga, "stale") do
+        if !Series.manga_has_tag?(manga, "stale") do
           Logger.warning("manga #{manga.name} is now stale")
         end
 
@@ -87,7 +87,13 @@ defmodule MangaWatcher.Manga.Updater do
   defp mark_stale?(manga, attrs) do
     if manga.last_chapter == attrs[:last_chapter] do
       not_updated_days =
-        DateTime.diff(DateTime.utc_now(), DateTime.from_naive!(manga.updated_at, "Etc/UTC"), :day)
+        DateTime.diff(
+          DateTime.utc_now(),
+          DateTime.from_naive!(manga.last_chapter_updated_at, "Etc/UTC"),
+          :day
+        )
+
+      Logger.warning("manga #{manga.name} has not been updated for #{not_updated_days}")
 
       not_updated_days > 30
     else

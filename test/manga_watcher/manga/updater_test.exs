@@ -130,7 +130,7 @@ defmodule MangaWatcher.Manga.UpdaterTest do
     test "returns stale?: true for not recently updated manga" do
       manga = %Manga{
         failed_updates: 1,
-        updated_at: NaiveDateTime.utc_now() |> NaiveDateTime.add(-31, :day)
+        last_chapter_updated_at: NaiveDateTime.utc_now() |> NaiveDateTime.add(-31, :day)
       }
 
       AttrFetcherMock
@@ -144,7 +144,7 @@ defmodule MangaWatcher.Manga.UpdaterTest do
 
     test "returns error if fetcher fails" do
       manga = %Manga{
-        updated_at: NaiveDateTime.utc_now()
+        last_chapter_updated_at: NaiveDateTime.utc_now()
       }
 
       AttrFetcherMock
