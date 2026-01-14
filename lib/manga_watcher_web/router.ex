@@ -35,10 +35,11 @@ defmodule MangaWatcherWeb.Router do
     live_dashboard "/dashboard", metrics: MangaWatcherWeb.Telemetry
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", MangaWatcherWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", MangaWatcherWeb do
+    pipe_through :api
+
+    get "/tags", Api.TagController, :index
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:manga_watcher, :dev_routes) do

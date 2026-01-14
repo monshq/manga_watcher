@@ -30,6 +30,42 @@ Hooks.NavbarMenu = {
   }
 }
 
+Hooks.MangaForm = {
+  mounted() {
+    const form = this.el
+    const tagsInput = form.querySelector('input[name="manga[tags]"]')
+    const existingTags = new Set()
+
+    fetch('/api/tags')
+      .then(r => r.json())
+      .then(data => {
+        data.forEach(tag => existingTags.add(tag.name.toLowerCase()))
+      })
+      .catch(() => {
+        // If API fails, we'll still check on submit
+      })
+
+    form.addEventListener('submit', (e) => {
+      if (tagsInput && tagsInput.value.trim()) {
+        const newTags = tagsInput.value
+          .split(',')
+          .map(t => t.trim().toLowerCase())
+          .filter(t => t !== '' && !existingTags.has(t))
+
+        if (newTags.length > 0) {
+          const confirmed = window.confirm(
+            `Create new tag(s): ${newTags.join(', ')}?`
+          )
+          if (!confirmed) {
+            e.preventDefault()
+            e.stopPropagation()
+          }
+        }
+      }
+    })
+  }
+}
+
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, { params: { _csrf_token: csrfToken }, hooks: Hooks })
 

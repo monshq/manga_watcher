@@ -19,6 +19,7 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
         phx-target={@myself}
         phx-change={if @action == :edit, do: "validate_change", else: "validate_create"}
         phx-submit="save"
+        phx-hook="MangaForm"
       >
         <.input field={@form[:url]} label="Url" autocomplete="off" />
         <.input field={@form[:tags]} label="Tags" value={render_tags(@form)} />

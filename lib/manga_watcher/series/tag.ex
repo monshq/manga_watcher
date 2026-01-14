@@ -4,6 +4,7 @@ defmodule MangaWatcher.Series.Tag do
 
   alias MangaWatcher.Series.Manga
 
+  @derive {Jason.Encoder, only: [:id, :name]}
   schema "tags" do
     field :name, :string
 
