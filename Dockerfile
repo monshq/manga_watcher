@@ -1,4 +1,4 @@
-FROM elixir:1.18-otp-28 AS build
+FROM elixir:1.19-otp-28 AS build
 
 ENV ENV=prod
 ENV MIX_ENV=prod
