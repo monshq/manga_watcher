@@ -93,7 +93,7 @@ defmodule MangaWatcher.Manga.Updater do
           :day
         )
 
-      Logger.warning("manga #{manga.name} has not been updated for #{not_updated_days}")
+      Logger.info("manga #{manga.name} has not been updated for #{not_updated_days} days")
 
       not_updated_days > 30
     else
