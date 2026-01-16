@@ -7,8 +7,6 @@ defmodule MangaWatcherWeb.MangaLive.Index do
   alias MangaWatcher.Series.Manga
   alias MangaWatcher.Manga.Updater
 
-  require Logger
-
   @impl true
   def mount(_params, _session, socket) do
     user_id = socket.assigns.current_user.id

@@ -9,8 +9,6 @@ defmodule MangaWatcher.UserMangas do
   alias MangaWatcher.Series.UserManga
   alias MangaWatcher.Repo
 
-  require Logger
-
   def create_user_manga(attrs) do
     attrs |> UserManga.create_changeset() |> Repo.insert()
   end
