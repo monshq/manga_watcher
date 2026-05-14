@@ -237,7 +237,17 @@ defmodule MangaWatcher.Accounts do
   """
   def get_user_by_session_token(token) do
     {:ok, query} = UserToken.verify_session_token_query(token)
-    Repo.one(query)
+    user = Repo.one(query)
+
+    if user do
+      {1, _} =
+        UserToken.by_token_and_context_query(token, "session")
+        |> Repo.update_all(
+          set: [updated_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)]
+        )
+    end
+
+    user
   end
 
   @doc """

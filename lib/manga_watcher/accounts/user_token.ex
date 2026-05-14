@@ -19,7 +19,7 @@ defmodule MangaWatcher.Accounts.UserToken do
     field :sent_to, :string
     belongs_to :user, MangaWatcher.Accounts.User
 
-    timestamps(updated_at: false)
+    timestamps()
   end
 
   @doc """
@@ -58,7 +58,7 @@ defmodule MangaWatcher.Accounts.UserToken do
     query =
       from token in by_token_and_context_query(token, "session"),
         join: user in assoc(token, :user),
-        where: token.inserted_at > ago(@session_validity_in_days, "day"),
+        where: token.updated_at > ago(@session_validity_in_days, "day"),
         select: user
 
     {:ok, query}
