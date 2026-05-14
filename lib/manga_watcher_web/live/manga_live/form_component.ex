@@ -3,7 +3,6 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
 
   alias MangaWatcher.Series
   alias MangaWatcher.Manga.Creator
-  alias MangaWatcher.Utils
 
   @impl true
   def render(assigns) do
@@ -125,7 +124,7 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
   end
 
   defp save_manga(socket, :new, manga_params) do
-    params = Utils.atomize_keys(manga_params)
+    params = %{url: manga_params["url"], tags: manga_params["tags"]}
 
     case Creator.add_for_user(socket.assigns.current_user.id, params) do
       {:ok, user_manga} ->

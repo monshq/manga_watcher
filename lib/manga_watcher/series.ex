@@ -170,14 +170,30 @@ defmodule MangaWatcher.Series do
 
   def create_manga(attrs \\ %{}) do
     attrs
+    |> normalize_tags_key()
     |> Manga.create_changeset()
     |> Repo.insert()
   end
 
   def update_manga(%Manga{} = manga, attrs, opts \\ []) do
     manga
-    |> Manga.update_changeset(attrs)
+    |> Manga.update_changeset(normalize_tags_key(attrs))
     |> Repo.update(opts)
+  end
+
+  defp normalize_tags_key(attrs) do
+    case Map.pop(attrs, :tags) do
+      {nil, attrs} ->
+        attrs
+
+      {tags, attrs} ->
+        attrs
+        |> Map.put("tags", tags)
+        |> Map.new(fn
+          {k, v} when is_atom(k) -> {to_string(k), v}
+          {k, v} -> {k, v}
+        end)
+    end
   end
 
   def delete_manga(%Manga{} = manga) do

@@ -38,13 +38,16 @@ defmodule MangaWatcher.Manga.Creator do
   end
 
   defp fetch_manga_attrs(attrs, attr_fetcher) do
-    case attr_fetcher.fetch(attrs) do
-      {:ok, parsed_attrs} ->
-        parsed_attrs
+    result =
+      case attr_fetcher.fetch(attrs) do
+        {:ok, parsed_attrs} ->
+          parsed_attrs
 
-      {:error, e} ->
-        Logger.error("fetching manga attrs failed: #{inspect(e)}")
-        attrs
-    end
+        {:error, e} ->
+          Logger.error("fetching manga attrs failed: #{inspect(e)}")
+          attrs
+      end
+
+    Map.new(result, fn {k, v} -> {to_string(k), v} end)
   end
 end
