@@ -44,7 +44,7 @@ defmodule MangaWatcherWeb.TagComponent do
       <div class={"ml-4 text-xs inline-flex items-center font-bold leading-sm uppercase px-3 py-1
               rounded-full #{@colors}"}>
         <.icon name={"hero-#{@icons[@state]}"} class="mr-1 w-3 h-3" />
-        <%= @name %>
+        {@name}
       </div>
     </button>
     """

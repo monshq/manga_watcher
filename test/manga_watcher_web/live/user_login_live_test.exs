@@ -63,7 +63,7 @@ defmodule MangaWatcherWeb.UserLoginLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|main a:fl-contains("Forgot your password?")|)
+        |> element("main a", "Forgot your password?")
         |> render_click()
         |> follow_redirect(conn, ~p"/users/reset_password")
 

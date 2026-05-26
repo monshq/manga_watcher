@@ -9,7 +9,7 @@ defmodule MangaWatcherWeb.MangaLive.FormComponent do
     ~H"""
     <div>
       <header class="text-primary font-medium text-xl">
-        <%= @title %>
+        {@title}
       </header>
 
       <.simple_form

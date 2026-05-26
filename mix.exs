@@ -39,13 +39,13 @@ defmodule MangaWatcher.MixProject do
   defp deps do
     [
       {:bcrypt_elixir, "~> 3.0"},
-      {:phoenix, "~> 1.7.7"},
+      {:phoenix, "~> 1.8"},
       {:phoenix_ecto, "~> 4.4"},
       {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0"},
-      {:phoenix_html, "~> 3.3"},
+      {:phoenix_html, "~> 4.3"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 0.20.0"},
+      {:phoenix_live_view, "~> 1.1"},
       {:floki, ">= 0.30.0"},
       {:phoenix_live_dashboard, "~> 0.8.0"},
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
@@ -53,19 +53,20 @@ defmodule MangaWatcher.MixProject do
       {:swoosh, "~> 1.3"},
       {:hackney, "~> 1.9"},
       {:finch, "~> 0.13"},
-      {:telemetry_metrics, "~> 0.6"},
+      {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
-      {:gettext, "~> 0.20"},
+      {:gettext, "~> 1.0"},
       {:req, "~> 0.5"},
       {:bandit, "~> 1.0"},
       {:waffle, "~> 1.1"},
       {:waffle_ecto, "~> 0.0"},
       {:mox, "~> 1.0", only: :test},
+      {:lazy_html, ">= 0.1.0", only: :test},
       {:excoveralls, "~> 0.13", only: :test},
       {:bypass, "~> 2.1", only: :test},
       {:sobelow, "~> 0.13", only: ~w(dev test)a, runtime: false},
       {:credo, "~> 1.7", only: ~w(dev test)a, runtime: false},
-      {:ex_check, "~> 0.14.0", only: ~w(dev test)a, runtime: false}
+      {:ex_check, "~> 0.14", only: ~w(dev test)a, runtime: false}
     ]
   end
 

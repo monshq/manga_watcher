@@ -7,10 +7,10 @@
           <div class="px-6 py-4 gap-3 flex flex-wrap justify-between items-center border-b border-gray-200 dark:border-gray-700">
             <div class="min-w-[300px]">
               <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">
-                <%= @title %>
+                {@title}
               </h2>
               <p class="text-sm text-gray-600 dark:text-gray-400">
-                <%= @description %>
+                {@description}
               </p>
             </div>
 
@@ -38,7 +38,7 @@
                 >
                   <div class="flex items-center gap-x-2">
                     <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-200">
-                      <%= col.label %>
+                      {col.label}
                     </span>
                   </div>
                 </th>
@@ -66,7 +66,7 @@
                   :for={col <- @col}
                   class="size-px whitespace-nowrap lg:table-cell grid grid-cols-[15ch_auto] w-full"
                 >
-                  <div class="lg:hidden block p-2 font-medium text-primary"><%= col.label %></div>
+                  <div class="lg:hidden block p-2 font-medium text-primary">{col.label}</div>
                   <button
                     type="button"
                     class="block text-left"
@@ -74,7 +74,7 @@
                   >
                     <span class="block px-6 py-2">
                       <span class="font-mono text-sm text-primary">
-                        <%= render_slot(col, Function.identity(row)) %>
+                        {render_slot(col, Function.identity(row))}
                       </span>
                     </span>
                   </button>
@@ -85,7 +85,7 @@
                       :for={action <- @action}
                       class="relative lg:ml-4 ml-2.5 font-semibold leading-6 text-primary"
                     >
-                      <%= render_slot(action, row) %>
+                      {render_slot(action, row)}
                     </span>
                   </div>
                 </td>

@@ -25,15 +25,15 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
     <%= cond do %>
       <% @manga.failed_updates > 5 -> %>
         <span class="text-red-500 dark:text-red-500 font-bold">
-          <%= last_read_chapter(@manga) %> / <%= @manga.last_chapter %>
+          {last_read_chapter(@manga)} / {@manga.last_chapter}
         </span>
       <% @manga.last_chapter <= last_read_chapter(@manga) -> %>
         <span class="text-gray-400 dark:text-gray-500">
-          <%= last_read_chapter(@manga) %> / <%= @manga.last_chapter %>
+          {last_read_chapter(@manga)} / {@manga.last_chapter}
         </span>
       <% true -> %>
         <span class="text-green-600 dark:text-green-300 font-bold">
-          <%= last_read_chapter(@manga) %> / <%= @manga.last_chapter %>
+          {last_read_chapter(@manga)} / {@manga.last_chapter}
         </span>
     <% end %>
     """
@@ -57,7 +57,7 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
       <div class="grow flex flex-col justify-between">
         <div>
           <.link target="_blank" href={@manga.url} class="font-medium dark:text-white">
-            <%= @manga.name %>
+            {@manga.name}
           </.link>
           <dl class="">
             <dd>

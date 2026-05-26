@@ -56,15 +56,15 @@ defmodule MangaWatcherWeb.WebsiteLive.Index do
           Unused
         <% @counter.total == @counter.broken -> %>
           <span class="text-red-500">
-            Broken <%= "(#{@counter.total})" %>
+            Broken {"(#{@counter.total})"}
           </span>
         <% @counter.broken == 0 -> %>
           <span class="text-green-500">
-            Healthy <%= "(#{@counter.total})" %>
+            Healthy {"(#{@counter.total})"}
           </span>
         <% true -> %>
           <span class="text-yellow-500">
-            Partially working <%= "(#{@counter.total - @counter.broken} / #{@counter.total})" %>
+            Partially working {"(#{@counter.total - @counter.broken} / #{@counter.total})"}
           </span>
       <% end %>
     </span>
