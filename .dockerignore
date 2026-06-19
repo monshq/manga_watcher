@@ -1,3 +1,14 @@
+.git
+.github
 _build
 .elixir_ls
+.elixir-tools
+.expert
+cover
 deps
+tmp
+test
+screenshot.png
+release.tar
+release.tar.gz
+erl_crash.dump
