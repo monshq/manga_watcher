@@ -66,6 +66,7 @@ defmodule MangaWatcher.MixProject do
       {:bypass, "~> 2.1", only: :test},
       {:sobelow, "~> 0.13", only: ~w(dev test)a, runtime: false},
       {:credo, "~> 1.7", only: ~w(dev test)a, runtime: false},
+      {:ex_crap, "~> 0.1.0", only: ~w(dev test)a, runtime: false},
       {:ex_check, "~> 0.14", only: ~w(dev test)a, runtime: false}
     ]
   end
