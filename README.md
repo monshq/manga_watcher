@@ -12,7 +12,6 @@ It supports any manga website that doesn't block access to it via captcha or che
 SERVER=your.server.com make release
 ```
 Requirements:
-- docker locally to build the app
-- `/srv/projects` to be created and writable by current user
-- systemd and [init-exporter](https://github.com/funbox/init-exporter) installed on server
-- filled `secrets.exs` config with http server and psql config
+- psql installed somewhere
+- docker or podman to build the image like `docker build .`
+- the following env vars set for the container environment: `DB_USERNAME`, `DB_PASSWORD`, `DB_HOSTNAME`, `DB_NAME`, `PHX_HOST`, `SECRET_KEY_BASE`

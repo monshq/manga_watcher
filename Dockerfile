@@ -1,12 +1,12 @@
-FROM elixir:1.19-otp-28 AS build
+FROM elixir:1.20-otp-29 AS build
 
-ENV ENV=prod
-ENV MIX_ENV=prod
+ENV ENV=prod \
+    MIX_ENV=prod
 
 WORKDIR /app
 
 RUN mix do local.hex --force, local.rebar --force
-ADD mix.exs mix.lock .
+ADD mix.exs mix.lock ./
 RUN mix deps.get --only prod
 RUN mix deps.compile
 
@@ -21,7 +21,21 @@ RUN mix assets.deploy
 RUN mix compile
 RUN mix release
 
-FROM scratch AS export
-COPY --from=build /app/_build/prod/rel/manga_watcher /
-ADD script script
-ADD Procfile .
+FROM elixir:1.20-otp-29
+
+ENV LANG=C.UTF-8 \
+    LANGUAGE=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    PORT=80
+
+WORKDIR /app
+
+RUN useradd --create-home --shell /bin/bash app
+
+COPY --from=build --chown=app:app /app/_build/prod/rel/manga_watcher /app
+
+USER app
+
+EXPOSE 80
+
+CMD ["/app/bin/manga_watcher", "start"]

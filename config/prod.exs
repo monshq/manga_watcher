@@ -6,13 +6,9 @@ import Config
 # which you should run after static files are built and
 # before starting your production server.
 config :manga_watcher, MangaWatcherWeb.Endpoint,
-  cache_static_manifest: "priv/static/cache_manifest.json"
-
-# Configures Swoosh API Client
-# config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: MangaWatcher.Finch
-
-# Disable Swoosh Local Memory Storage
-# config :swoosh, local: false
+  cache_static_manifest: "priv/static/cache_manifest.json",
+  check_origin: false,
+  show_sensitive_data_on_connection_error: false
 
 # Do not print debug messages in production
 config :logger, level: :info
@@ -27,5 +23,3 @@ config :waffle,
   storage: Waffle.Storage.Local,
   storage_dir: "images",
   storage_dir_prefix: "shared"
-
-import_config("secrets.exs")

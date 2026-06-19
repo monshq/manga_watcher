@@ -35,7 +35,6 @@ manga_watcher-*.tar
 npm-debug.log
 /assets/node_modules/
 
-/config/secrets.exs
 /release.*
 
 priv/static/*
