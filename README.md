@@ -14,4 +14,4 @@ SERVER=your.server.com make release
 Requirements:
 - psql installed somewhere
 - docker or podman to build the image like `docker build .`
-- the following env vars set for the container environment: `DB_USERNAME`, `DB_PASSWORD`, `DB_HOSTNAME`, `DB_NAME`, `PHX_HOST`, `SECRET_KEY_BASE`
+- the following env vars set for the container environment: `DB_USERNAME`, `DB_PASSWORD`, `DB_HOSTNAME`, `DB_NAME`, `PHX_HOST`, `SECRET_KEY_BASE`, `S3_BUCKET`, `S3_ASSET_HOST`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`

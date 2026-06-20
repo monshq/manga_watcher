@@ -70,6 +70,7 @@ config :phoenix, :json_library, Jason
 
 config :waffle,
   storage: Waffle.Storage.Local,
+  bucket: "local-bucket",
   storage_dir: "images",
   storage_dir_prefix: "priv/static"
 

@@ -45,3 +45,12 @@ jobs:
             cr.mons.one/manga_watcher:${{ github.event.workflow_run.head_sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Notify deploy webhook
+        if: success()
+        run: |
+          sleep 5
+          curl -fsS --max-time 30 -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"service":"manga_watcher"}' \
+            https://r.mons.one/webhook/deploy

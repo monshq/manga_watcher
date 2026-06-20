@@ -23,7 +23,7 @@ if config_env() == :prod do
     password: System.fetch_env!("DB_PASSWORD"),
     hostname: System.fetch_env!("DB_HOSTNAME"),
     database: System.fetch_env!("DB_NAME"),
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10")
+    pool_size: String.to_integer(System.get_env("POOL_SIZE", "5"))
 
   config :manga_watcher, MangaWatcherWeb.Endpoint,
     url: [
@@ -32,8 +32,18 @@ if config_env() == :prod do
     ],
     http: [
       ip: {0, 0, 0, 0},
-      port: String.to_integer(System.get_env("PHX_PORT", "4000"))
+      port: String.to_integer(System.get_env("PHX_PORT", "3000"))
     ],
     server: true,
     secret_key_base: System.fetch_env!("SECRET_KEY_BASE")
+
+  config :waffle,
+    storage: Waffle.Storage.S3,
+    bucket: "default-bucket"
+
+  config :ex_aws,
+    access_key_id: System.fetch_env!("S3_ACCESS_KEY_ID"),
+    secret_access_key: System.fetch_env!("S3_SECRET_ACCESS_KEY")
+
+  config :ex_aws, :s3, MangaWatcher.S3Config.endpoint_options(System.fetch_env!("S3_ENDPOINT"))
 end

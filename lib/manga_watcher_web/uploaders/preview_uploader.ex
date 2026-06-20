@@ -8,9 +8,12 @@ defmodule MangaWatcher.PreviewUploader do
   # To add a thumbnail version:
   # @versions [:original, :thumb]
 
-  # Override the bucket on a per definition basis:
   def bucket do
-    :preview
+    Application.fetch_env!(:waffle, :bucket)
+  end
+
+  def asset_host do
+    {:system, "S3_ASSET_HOST"}
   end
 
   # def bucket({_file, scope}) do
@@ -50,6 +53,20 @@ defmodule MangaWatcher.PreviewUploader do
   def exists?(nil), do: false
 
   def exists?(name) do
+    case Application.get_env(:waffle, :storage) do
+      Waffle.Storage.S3 -> s3_exists?(name)
+      _ -> local_exists?(name)
+    end
+  end
+
+  defp s3_exists?(name) do
+    case ExAws.S3.head_object(bucket(), name) |> ExAws.request() do
+      {:ok, _} -> true
+      _ -> false
+    end
+  end
+
+  defp local_exists?(name) do
     prefix = Application.get_env(:waffle, :storage_dir_prefix)
     dir = Application.get_env(:waffle, :storage_dir)
     File.exists?("#{prefix}/#{dir}/#{name}")
