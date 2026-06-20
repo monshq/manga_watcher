@@ -8,11 +8,14 @@ defmodule MangaWatcher.Manga.Updater do
   @failed_updates_allowed 5
 
   def batch_update(mangas) do
+    logger_metadata = Logger.metadata() |> Keyword.take([:job_id])
+
     Logger.info("starting update of outdated mangas")
 
     mangas
     |> Enum.group_by(&URI.parse(&1.url).host)
-    |> Task.async_stream(&update_group/1,
+    |> Task.async_stream(
+      fn group -> with_logger_metadata(logger_metadata, fn -> update_group(group) end) end,
       ordered: false,
       timeout: 180_000,
       max_concurrency: 10
@@ -98,6 +101,18 @@ defmodule MangaWatcher.Manga.Updater do
       not_updated_days > 30
     else
       false
+    end
+  end
+
+  defp with_logger_metadata(metadata, fun) do
+    original_metadata = Logger.metadata()
+
+    Logger.metadata(metadata)
+
+    try do
+      fun.()
+    after
+      Logger.reset_metadata(original_metadata)
     end
   end
 end
