@@ -6,6 +6,7 @@ defmodule MangaWatcher.Manga.AttrFetcherTest do
 
   alias MangaWatcher.Manga.AttrFetcher
   alias MangaWatcher.PreviewUploader
+  alias MangaWatcher.Series.UserManga
 
   setup do
     website_fixture(base_url: "mangasource.com")
@@ -129,6 +130,62 @@ defmodule MangaWatcher.Manga.AttrFetcherTest do
       assert {:ok, attrs} = AttrFetcher.fetch(manga_attrs, deps)
 
       assert attrs.preview == "existing_preview.jpg"
+    end
+
+    test "does not return associations from existing manga attrs" do
+      manga_attrs = %{
+        url: "https://mangasource.com/manga/1",
+        tags: [],
+        user_mangas: [%UserManga{user_id: 1, manga_id: 1, last_read_chapter: 4}]
+      }
+
+      MangaWatcher.DownloaderMock
+      |> expect(:download, fn "https://mangasource.com/manga/1" ->
+        {:ok, "<html>manga page</html>"}
+      end)
+
+      MangaWatcher.PageParserMock
+      |> expect(:parse, fn _html, _website ->
+        {:ok, %{name: "My Manga", last_chapter: 5, preview: nil}}
+      end)
+
+      deps = %{
+        downloader: MangaWatcher.DownloaderMock,
+        page_parser: MangaWatcher.PageParserMock
+      }
+
+      assert {:ok, attrs} = AttrFetcher.fetch(manga_attrs, deps)
+
+      assert attrs.url == "https://mangasource.com/manga/1"
+      assert attrs.name == "My Manga"
+      assert attrs.last_chapter == 5
+      refute Map.has_key?(attrs, :tags)
+      refute Map.has_key?(attrs, :user_mangas)
+    end
+
+    test "preserves user-submitted tag params" do
+      manga_attrs = %{
+        url: "https://mangasource.com/manga/1",
+        tags: "shoujo-ai, yuri"
+      }
+
+      MangaWatcher.DownloaderMock
+      |> expect(:download, fn "https://mangasource.com/manga/1" ->
+        {:ok, "<html>manga page</html>"}
+      end)
+
+      MangaWatcher.PageParserMock
+      |> expect(:parse, fn _html, _website ->
+        {:ok, %{name: "My Manga", last_chapter: 5, preview: nil}}
+      end)
+
+      deps = %{
+        downloader: MangaWatcher.DownloaderMock,
+        page_parser: MangaWatcher.PageParserMock
+      }
+
+      assert {:ok, attrs} = AttrFetcher.fetch(manga_attrs, deps)
+      assert attrs.tags == "shoujo-ai, yuri"
     end
   end
 end

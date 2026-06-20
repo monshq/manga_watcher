@@ -25,7 +25,7 @@ defmodule MangaWatcher.Manga.AttrFetcher do
              },
              deps
            ) do
-      {:ok, manga_attrs |> Map.merge(attrs) |> Map.merge(%{preview: preview})}
+      {:ok, attrs |> Map.put(:url, url) |> Map.put(:preview, preview) |> put_tags(manga_attrs)}
     else
       :error ->
         {:error, "url is missing"}
@@ -90,6 +90,9 @@ defmodule MangaWatcher.Manga.AttrFetcher do
   rescue
     _ -> ""
   end
+
+  defp put_tags(attrs, %{tags: tags}) when is_binary(tags), do: Map.put(attrs, :tags, tags)
+  defp put_tags(attrs, _manga_attrs), do: attrs
 
   defp default_deps do
     %{

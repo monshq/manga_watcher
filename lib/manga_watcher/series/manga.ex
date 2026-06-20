@@ -72,7 +72,7 @@ defmodule MangaWatcher.Series.Manga do
 
   def add_tag(manga, tag) do
     manga = manga |> Repo.preload(:tags)
-    tags = [tag | manga.tags]
+    tags = [tag | manga.tags] |> Enum.uniq_by(& &1.name)
 
     manga
     |> cast(%{}, [])

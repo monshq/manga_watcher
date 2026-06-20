@@ -44,6 +44,15 @@ defmodule MangaWatcher.SeriesTest do
       assert length(manga.tags) == 2
     end
 
+    test "add_manga_tag/2 is idempotent" do
+      manga = manga_fixture_with_tags(%{tags: ["stale"]})
+
+      assert {:ok, manga} = Series.add_manga_tag(manga, "stale")
+
+      manga = Repo.preload(manga, :tags, force: true)
+      assert Enum.map(manga.tags, & &1.name) == ["stale"]
+    end
+
     test "create_manga/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Series.create_manga(@invalid_attrs)
     end
