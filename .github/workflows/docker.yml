@@ -42,7 +42,6 @@ jobs:
           push: true
           tags: |
             cr.mons.one/manga_watcher:latest
-            cr.mons.one/manga_watcher:${{ github.event.workflow_run.head_sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
