@@ -19,6 +19,31 @@ defmodule MangaWatcher.SeriesTest do
       assert Series.list_mangas() == [manga]
     end
 
+    test "list_mangas_with_missing_preview/0 returns only mangas without previews" do
+      missing_preview = manga_fixture(%{preview: nil})
+      manga_fixture(%{preview: "preview.jpg"})
+
+      assert [manga] = Series.list_mangas_with_missing_preview()
+      assert manga.id == missing_preview.id
+      assert manga.tags == []
+    end
+
+    test "list_mangas_with_missing_preview/0 excludes broken mangas" do
+      missing_preview = manga_fixture(%{preview: nil})
+
+      broken_manga =
+        manga_fixture_with_tags(%{
+          preview: nil,
+          tags: ["broken", "stale"]
+        })
+
+      result = Series.list_mangas_with_missing_preview()
+      result_ids = ids(result)
+
+      assert missing_preview.id in result_ids
+      refute broken_manga.id in result_ids
+    end
+
     test "get_manga!/1 returns the manga with given id" do
       manga = manga_fixture() |> Repo.preload([:tags, :user_mangas])
       assert Series.get_manga!(manga.id) == manga

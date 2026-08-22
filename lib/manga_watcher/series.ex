@@ -123,6 +123,21 @@ defmodule MangaWatcher.Series do
     Repo.all(Manga)
   end
 
+  def list_mangas_with_missing_preview() do
+    broken_ids_query =
+      from m in Manga,
+        join: t in assoc(m, :tags),
+        where: t.name == "broken",
+        select: m.id
+
+    Repo.all(
+      from m in Manga,
+        where: is_nil(m.preview),
+        where: m.id not in subquery(broken_ids_query),
+        preload: :tags
+    )
+  end
+
   def list_mangas_for_update() do
     exclude_ids_query =
       from m in Manga,

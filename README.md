@@ -15,3 +15,13 @@ Requirements:
 - psql installed somewhere
 - docker or podman to build the image like `docker build .`
 - the following env vars set for the container environment: `DB_USERNAME`, `DB_PASSWORD`, `DB_HOSTNAME`, `DB_NAME`, `PHX_HOST`, `SECRET_KEY_BASE`, `S3_BUCKET`, `S3_ASSET_HOST`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`
+
+## Maintenance tasks
+
+Update every manga whose preview image is missing:
+
+```sh
+bin/manga_watcher rpc 'MangaWatcher.Tasks.UpdateMissingImages.run()'
+```
+
+When running from source instead of a release, use `mix mangas.update_missing_images`.
