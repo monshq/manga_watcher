@@ -28,7 +28,7 @@ defmodule MangaWatcher.SeriesTest do
       assert manga.tags == []
     end
 
-    test "list_mangas_with_missing_preview/0 excludes broken mangas" do
+    test "list_mangas_with_missing_preview/0 excludes broken mangas but keeps completed ones" do
       missing_preview = manga_fixture(%{preview: nil})
 
       broken_manga =
@@ -37,10 +37,41 @@ defmodule MangaWatcher.SeriesTest do
           tags: ["broken", "stale"]
         })
 
+      completed_manga =
+        manga_fixture_with_tags(%{
+          preview: nil,
+          tags: ["completed"]
+        })
+
       result = Series.list_mangas_with_missing_preview()
       result_ids = ids(result)
 
       assert missing_preview.id in result_ids
+      assert completed_manga.id in result_ids
+      refute broken_manga.id in result_ids
+    end
+
+    test "list_mangas_with_preview/0 returns mangas with previews except broken ones" do
+      with_preview = manga_fixture(%{preview: "preview.jpg"})
+      manga_fixture(%{preview: nil})
+
+      broken_manga =
+        manga_fixture_with_tags(%{
+          preview: "broken_preview.jpg",
+          tags: ["broken"]
+        })
+
+      completed_manga =
+        manga_fixture_with_tags(%{
+          preview: "completed_preview.jpg",
+          tags: ["completed"]
+        })
+
+      result = Series.list_mangas_with_preview()
+      result_ids = ids(result)
+
+      assert with_preview.id in result_ids
+      assert completed_manga.id in result_ids
       refute broken_manga.id in result_ids
     end
 

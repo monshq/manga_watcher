@@ -1,6 +1,7 @@
 defmodule MangaWatcher.Tasks.UpdateMissingImages do
   @moduledoc """
-  Updates every manga that does not have a stored preview image.
+  Updates every manga that does not have a stored preview image, including
+  mangas whose preview points to an object that no longer exists in storage.
 
   Run this against a running release with:
 
@@ -8,14 +9,25 @@ defmodule MangaWatcher.Tasks.UpdateMissingImages do
   """
 
   alias MangaWatcher.Manga.Updater
+  alias MangaWatcher.PreviewUploader
   alias MangaWatcher.Series
 
   require Logger
 
   def run do
-    mangas = Series.list_mangas_with_missing_preview()
+    missing_preview = Series.list_mangas_with_missing_preview()
 
-    Logger.info("found #{length(mangas)} mangas with missing images")
+    dead_preview =
+      Series.list_mangas_with_preview()
+      |> Enum.reject(&PreviewUploader.exists?(&1.preview))
+
+    mangas = missing_preview ++ dead_preview
+
+    Logger.info(
+      "found #{length(mangas)} mangas with missing images " <>
+        "(#{length(missing_preview)} without preview, #{length(dead_preview)} with dead preview)"
+    )
+
     Updater.batch_update(mangas)
   end
 end

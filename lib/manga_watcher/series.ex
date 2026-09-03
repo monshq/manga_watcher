@@ -124,34 +124,26 @@ defmodule MangaWatcher.Series do
   end
 
   def list_mangas_with_missing_preview() do
-    broken_ids_query =
-      from m in Manga,
-        join: t in assoc(m, :tags),
-        where: t.name == "broken",
-        select: m.id
-
     Repo.all(
       from m in Manga,
         where: is_nil(m.preview),
-        where: m.id not in subquery(broken_ids_query),
+        where: m.id not in subquery(manga_ids_with_tags(["broken"])),
+        preload: :tags
+    )
+  end
+
+  def list_mangas_with_preview() do
+    Repo.all(
+      from m in Manga,
+        where: not is_nil(m.preview),
+        where: m.id not in subquery(manga_ids_with_tags(["broken"])),
         preload: :tags
     )
   end
 
   def list_mangas_for_update() do
-    exclude_ids_query =
-      from m in Manga,
-        join: t in assoc(m, :tags),
-        where: t.name in ["broken", "completed"],
-        select: m.id,
-        distinct: true
-
-    stale_manga_ids_query =
-      from m in Manga,
-        join: t in assoc(m, :tags),
-        where: t.name in ["stale", "slow-burner", "still-reading"],
-        select: m.id,
-        distinct: true
+    exclude_ids_query = manga_ids_with_tags(["broken", "completed"])
+    stale_manga_ids_query = manga_ids_with_tags(["stale", "slow-burner", "still-reading"])
 
     stale_cutoff = NaiveDateTime.shift(NaiveDateTime.utc_now(), @update_duration.stale)
     normal_cutoff = NaiveDateTime.shift(NaiveDateTime.utc_now(), @update_duration.normal)
@@ -165,6 +157,14 @@ defmodule MangaWatcher.Series do
         preload: :tags
 
     Repo.all(query)
+  end
+
+  defp manga_ids_with_tags(tag_names) do
+    from m in Manga,
+      join: t in assoc(m, :tags),
+      where: t.name in ^tag_names,
+      select: m.id,
+      distinct: true
   end
 
   def get_manga(attrs) do

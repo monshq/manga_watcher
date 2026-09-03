@@ -142,6 +142,26 @@ defmodule MangaWatcher.Manga.UpdaterTest do
       assert plan.mark_stale?
     end
 
+    test "returns stale?: false for completed manga regardless of update age" do
+      manga =
+        manga_fixture_with_tags(%{
+          last_chapter_updated_at:
+            NaiveDateTime.utc_now()
+            |> NaiveDateTime.add(-31, :day)
+            |> NaiveDateTime.truncate(:second),
+          tags: ["completed"]
+        })
+        |> Repo.preload(:tags)
+
+      AttrFetcherMock
+      |> expect(:fetch, fn _manga_attrs ->
+        {:ok, %{name: "X", preview: nil}}
+      end)
+
+      assert {:ok, plan} = Updater.plan_update(manga, AttrFetcherMock)
+      refute plan.mark_stale?
+    end
+
     test "returns error if fetcher fails" do
       manga = %Manga{
         last_chapter_updated_at: NaiveDateTime.utc_now()
