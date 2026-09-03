@@ -42,7 +42,7 @@ jobs:
     - name: Set up Elixir
       uses: erlef/setup-beam@main
       with:
-        elixir-version: '1.20.0'
+        elixir-version: '1.20.4'
         otp-version: '29.0'
     - name: Restore dependencies cache
       uses: actions/cache@v4
