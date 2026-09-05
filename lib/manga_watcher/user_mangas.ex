@@ -27,30 +27,36 @@ defmodule MangaWatcher.UserMangas do
         join: um in assoc(m, :user_mangas),
         where: um.user_id == ^user_id,
         order_by: [desc: m.last_chapter - um.last_read_chapter, desc: m.updated_at],
-        preload: :user_mangas
+        preload: [user_mangas: um]
 
     Repo.all(query)
   end
 
   def filter_mangas(user_id, include_tags, exclude_tags) do
-    exclude_query =
-      from m in Manga,
-        join: t in assoc(m, :tags),
-        where: t.name in ^exclude_tags,
-        select: m.id
-
     query =
       from m in Manga,
         join: um in assoc(m, :user_mangas),
         where: um.user_id == ^user_id,
-        where: m.id not in subquery(exclude_query),
-        left_join: t in assoc(m, :tags),
-        where: fragment("cardinality(?::text[]) = 0", ^include_tags) or t.name in ^include_tags,
-        group_by: [m.id, um.last_read_chapter],
-        order_by: [desc: m.last_chapter - um.last_read_chapter, desc: :updated_at],
-        preload: :user_mangas
+        where: m.id not in subquery(tagged_manga_ids(exclude_tags)),
+        order_by: [desc: m.last_chapter - um.last_read_chapter, desc: m.updated_at],
+        preload: [user_mangas: um]
 
-    Repo.all(query)
+    query
+    |> with_any_tag(include_tags)
+    |> Repo.all()
+  end
+
+  defp with_any_tag(query, []), do: query
+
+  defp with_any_tag(query, tags) do
+    from m in query, where: m.id in subquery(tagged_manga_ids(tags))
+  end
+
+  defp tagged_manga_ids(tags) do
+    from m in Manga,
+      join: t in assoc(m, :tags),
+      where: t.name in ^tags,
+      select: m.id
   end
 
   def get_manga!(user_id, id) do

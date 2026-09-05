@@ -65,6 +65,34 @@ defmodule MangaWatcher.UserMangasTest do
       assert ids(mangas) == ids([m1, m2, m3])
     end
 
+    test "list_mangas/1 and filter_mangas/3 preload only the current user's user_manga", %{
+      user: user
+    } do
+      other_user = user_fixture()
+
+      manga =
+        manga_for_user_fixture(user, %{last_chapter: 10, user_manga: %{last_read_chapter: 3}})
+
+      {:ok, _} =
+        UserMangas.create_user_manga(%{
+          manga_id: manga.id,
+          user_id: other_user.id,
+          last_read_chapter: 8
+        })
+
+      for {list_user, expected_chapter} <- [{user, 3}, {other_user, 8}] do
+        for mangas <- [
+              UserMangas.list_mangas(list_user.id),
+              UserMangas.filter_mangas(list_user.id, [], [])
+            ] do
+          assert [%{id: id, user_mangas: [user_manga]}] = mangas
+          assert id == manga.id
+          assert user_manga.user_id == list_user.id
+          assert user_manga.last_read_chapter == expected_chapter
+        end
+      end
+    end
+
     test "list_mangas/0 returns all user mangas in correct order", %{user: user} do
       m1 = manga_for_user_fixture(user, %{last_chapter: 10, user_manga: %{last_read_chapter: 7}})
       m2 = manga_for_user_fixture(user, %{last_chapter: 15, user_manga: %{last_read_chapter: 13}})
