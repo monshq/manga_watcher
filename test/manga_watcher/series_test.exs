@@ -205,6 +205,9 @@ defmodule MangaWatcher.SeriesTest do
       assert normal_manga.id in result_ids
       assert dormant_manga.id in result_ids
 
+      # the updater needs both tags and followers to plan tag changes
+      assert Enum.all?(result, &(is_list(&1.tags) and is_list(&1.user_mangas)))
+
       refute fresh_stale_manga.id in result_ids
       refute fresh_dormant_manga.id in result_ids
       refute fresh_normal_manga.id in result_ids

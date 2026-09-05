@@ -23,7 +23,6 @@ defmodule MangaWatcher.Manga.UpdatePollerTest do
 
     assert Process.alive?(pid)
     assert log =~ ~r/job_id=[ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789]{6}/
-    assert log =~ "synced dormant tags"
     assert log =~ "starting update of outdated mangas"
     assert log =~ "finished updating mangas"
   end

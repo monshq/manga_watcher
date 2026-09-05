@@ -2,7 +2,6 @@ defmodule MangaWatcher.UserMangasTest do
   use MangaWatcher.DataCase
 
   alias MangaWatcher.Series
-  alias MangaWatcher.Series.UserManga
   alias MangaWatcher.UserMangas
 
   describe "mangas" do
@@ -176,49 +175,37 @@ defmodule MangaWatcher.UserMangasTest do
       )
     end
 
-    test "sync_dormant_tags/0 tags dormant mangas and leaves active ones alone", %{user: user} do
-      dormant = dormant_manga(user)
+    test "dormant?/1 is true when every follower is dormant", %{user: user} do
+      manga = dormant_manga(user)
+      assert UserMangas.dormant?(Series.get_manga!(manga.id))
+    end
 
-      unread_recently =
+    test "dormant?/1 loads user_mangas when they are not preloaded", %{user: user} do
+      manga = dormant_manga(user)
+      assert UserMangas.dormant?(manga)
+    end
+
+    test "dormant?/1 is false for a manga read recently", %{user: user} do
+      manga =
         manga_for_user_fixture(user, %{
           last_chapter: 5,
           user_manga: %{last_read_chapter: 1, last_read_at: month_ago_plus(1)}
         })
 
-      fully_read =
+      refute UserMangas.dormant?(Series.get_manga!(manga.id))
+    end
+
+    test "dormant?/1 is false for a fully read manga", %{user: user} do
+      manga =
         manga_for_user_fixture(user, %{
           last_chapter: 5,
           user_manga: %{last_read_chapter: 5, last_read_at: month_ago_plus(-10)}
         })
 
-      assert %{added: 1, removed: 0} = UserMangas.sync_dormant_tags()
-
-      assert Series.manga_has_tag?(dormant, "dormant")
-      refute Series.manga_has_tag?(unread_recently, "dormant")
-      refute Series.manga_has_tag?(fully_read, "dormant")
-
-      # running it again is a no-op
-      assert %{added: 0, removed: 0} = UserMangas.sync_dormant_tags()
+      refute UserMangas.dormant?(Series.get_manga!(manga.id))
     end
 
-    test "sync_dormant_tags/0 removes the tag from mangas that are no longer dormant", %{
-      user: user
-    } do
-      manga = dormant_manga(user)
-      {:ok, manga} = Series.add_manga_tag(manga, "dormant")
-
-      # bypass update_user_manga/2 so only the sync can remove the tag
-      Repo.update_all(
-        from(um in UserManga, where: um.manga_id == ^manga.id),
-        set: [last_read_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)]
-      )
-
-      assert Series.manga_has_tag?(manga, "dormant")
-      assert %{added: 0, removed: 1} = UserMangas.sync_dormant_tags()
-      refute Series.manga_has_tag?(Series.get_manga!(manga.id), "dormant")
-    end
-
-    test "sync_dormant_tags/0 only tags a manga when every follower is dormant", %{user: user} do
+    test "dormant?/1 is false when any follower is still active", %{user: user} do
       manga = dormant_manga(user)
 
       {:ok, _} =
@@ -229,17 +216,11 @@ defmodule MangaWatcher.UserMangasTest do
           last_read_at: month_ago_plus(1)
         })
 
-      assert %{added: 0, removed: 0} = UserMangas.sync_dormant_tags()
-      refute Series.manga_has_tag?(manga, "dormant")
+      refute UserMangas.dormant?(Series.get_manga!(manga.id))
     end
 
-    test "sync_dormant_tags/1 only touches the given manga", %{user: user} do
-      synced = dormant_manga(user)
-      other = dormant_manga(user)
-
-      assert %{added: 1, removed: 0} = UserMangas.sync_dormant_tags(synced.id)
-      assert Series.manga_has_tag?(synced, "dormant")
-      refute Series.manga_has_tag?(other, "dormant")
+    test "dormant?/1 is false for a manga nobody follows" do
+      refute UserMangas.dormant?(manga_fixture())
     end
 
     test "update_user_manga/2 removes the dormant tag once the manga is read", %{user: user} do
@@ -249,6 +230,18 @@ defmodule MangaWatcher.UserMangasTest do
 
       {:ok, _} = UserMangas.update_user_manga(user_manga, %{last_read_chapter: 5})
       refute Series.manga_has_tag?(Series.get_manga!(manga.id), "dormant")
+    end
+
+    test "update_user_manga/2 keeps the dormant tag while the manga stays dormant", %{
+      user: user
+    } do
+      manga = dormant_manga(user)
+      {:ok, manga} = Series.add_manga_tag(manga, "dormant")
+      [user_manga] = Repo.preload(manga, :user_mangas).user_mangas
+
+      # editing to the same chapter doesn't count as reading
+      {:ok, _} = UserMangas.update_user_manga(user_manga, %{last_read_chapter: 1})
+      assert Series.manga_has_tag?(Series.get_manga!(manga.id), "dormant")
     end
 
     test "get_manga!/2 returns the manga for user", %{user: user} do

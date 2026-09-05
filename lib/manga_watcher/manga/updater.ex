@@ -1,6 +1,7 @@
 defmodule MangaWatcher.Manga.Updater do
   alias MangaWatcher.Manga.AttrFetcher
   alias MangaWatcher.Series
+  alias MangaWatcher.UserMangas
 
   require Logger
 
@@ -52,28 +53,35 @@ defmodule MangaWatcher.Manga.Updater do
        %{
          attrs: Map.merge(parsed_attrs, %{failed_updates: 0}),
          mark_stale?: mark_stale?(manga, parsed_attrs),
+         mark_dormant?: mark_dormant?(manga),
          remove_broken?: true
        }}
     end
   end
 
-  defp apply_update_plan(manga, %{attrs: attrs, mark_stale?: stale?, remove_broken?: rb}) do
+  defp apply_update_plan(manga, plan) do
+    %{attrs: attrs, mark_stale?: stale?, mark_dormant?: dormant?, remove_broken?: rb} = plan
+
     {:ok, updated} = Series.update_manga(manga, attrs, force: true)
 
     if rb, do: Series.remove_manga_tag(updated, "broken")
 
-    {:ok, updated} =
-      if stale? do
-        if !Series.manga_has_tag?(manga, "stale") do
-          Logger.warning("manga #{manga.name} is now stale")
-        end
-
-        Series.add_manga_tag(updated, "stale")
-      else
-        Series.remove_manga_tag(updated, "stale")
-      end
+    {:ok, updated} = sync_tag(updated, "stale", stale?)
+    {:ok, updated} = sync_tag(updated, UserMangas.dormant_tag(), dormant?)
 
     updated
+  end
+
+  defp sync_tag(manga, tag, true) do
+    if !Series.manga_has_tag?(manga, tag) do
+      Logger.warning("manga #{manga.name} is now #{tag}")
+    end
+
+    Series.add_manga_tag(manga, tag)
+  end
+
+  defp sync_tag(manga, tag, false) do
+    Series.remove_manga_tag(manga, tag)
   end
 
   defp mark_manga_failed(manga) do
@@ -107,6 +115,10 @@ defmodule MangaWatcher.Manga.Updater do
       true ->
         false
     end
+  end
+
+  defp mark_dormant?(manga) do
+    not Series.manga_has_tag?(manga, "completed") and UserMangas.dormant?(manga)
   end
 
   defp with_logger_metadata(metadata, fun) do

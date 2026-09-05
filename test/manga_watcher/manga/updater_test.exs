@@ -2,9 +2,11 @@ defmodule MangaWatcher.Manga.UpdaterTest do
   use MangaWatcher.DataCase, async: true
 
   import MangaWatcher.SeriesFixtures
+  import MangaWatcher.AccountsFixtures
   import Mox
 
   alias MangaWatcher.AttrFetcherMock
+  alias MangaWatcher.Series
   alias MangaWatcher.Series.Manga
   alias MangaWatcher.Manga.Updater
   alias MangaWatcher.Repo
@@ -104,6 +106,53 @@ defmodule MangaWatcher.Manga.UpdaterTest do
     end
   end
 
+  describe "update/1 — dormant tag" do
+    test "adds the dormant tag when every follower stopped reading" do
+      manga = dormant_manga_for(user_fixture())
+
+      AttrFetcherMock
+      |> expect(:fetch, fn _manga_attrs -> {:ok, %{name: "X", preview: nil}} end)
+
+      updated = Updater.update(manga, AttrFetcherMock)
+      assert Series.manga_has_tag?(updated, "dormant")
+    end
+
+    test "removes the dormant tag once a follower catches up" do
+      manga = dormant_manga_for(user_fixture())
+      {:ok, manga} = Series.add_manga_tag(manga, "dormant")
+
+      Repo.update_all(
+        from(um in MangaWatcher.Series.UserManga, where: um.manga_id == ^manga.id),
+        set: [last_read_chapter: manga.last_chapter]
+      )
+
+      AttrFetcherMock
+      |> expect(:fetch, fn _manga_attrs -> {:ok, %{name: "X", preview: nil}} end)
+
+      updated = Updater.update(Series.get_manga!(manga.id), AttrFetcherMock)
+      refute Series.manga_has_tag?(updated, "dormant")
+    end
+  end
+
+  defp dormant_manga_for(user, attrs \\ %{}) do
+    month_and_a_day_ago =
+      NaiveDateTime.utc_now()
+      |> NaiveDateTime.shift(month: -1, day: -1)
+      |> NaiveDateTime.truncate(:second)
+
+    manga_for_user_fixture(
+      user,
+      Map.merge(
+        %{
+          last_chapter: 5,
+          user_manga: %{last_read_chapter: 1, last_read_at: month_and_a_day_ago}
+        },
+        attrs
+      )
+    )
+    |> then(&Series.get_manga!(&1.id))
+  end
+
   describe "plan_update/2" do
     test "returns update plan for fresh manga with preview" do
       manga = %Manga{
@@ -124,7 +173,28 @@ defmodule MangaWatcher.Manga.UpdaterTest do
       assert plan.attrs.preview == "new_name.jpg"
       assert plan.attrs.failed_updates == 0
       refute plan.mark_stale?
+      refute plan.mark_dormant?
       assert plan.remove_broken?
+    end
+
+    test "returns dormant?: true when every follower stopped reading" do
+      manga = dormant_manga_for(user_fixture())
+
+      AttrFetcherMock
+      |> expect(:fetch, fn _manga_attrs -> {:ok, %{name: "X", preview: nil}} end)
+
+      assert {:ok, plan} = Updater.plan_update(manga, AttrFetcherMock)
+      assert plan.mark_dormant?
+    end
+
+    test "returns dormant?: false for completed manga regardless of reading age" do
+      manga = dormant_manga_for(user_fixture(), %{tags: "completed"})
+
+      AttrFetcherMock
+      |> expect(:fetch, fn _manga_attrs -> {:ok, %{name: "X", preview: nil}} end)
+
+      assert {:ok, plan} = Updater.plan_update(manga, AttrFetcherMock)
+      refute plan.mark_dormant?
     end
 
     test "returns stale?: true for not recently updated manga" do

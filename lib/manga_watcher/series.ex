@@ -157,7 +157,7 @@ defmodule MangaWatcher.Series do
         where:
           (m.id in subquery(stale_manga_ids_query) and m.updated_at < ^stale_cutoff) or
             (m.id not in subquery(stale_manga_ids_query) and m.updated_at < ^normal_cutoff),
-        preload: :tags
+        preload: [:tags, :user_mangas]
 
     Repo.all(query)
   end
