@@ -27,7 +27,7 @@ defmodule MangaWatcher.UserMangas do
         join: um in assoc(m, :user_mangas),
         where: um.user_id == ^user_id,
         order_by: [desc: m.last_chapter - um.last_read_chapter, desc: m.updated_at],
-        preload: [user_mangas: um]
+        preload: [:tags, user_mangas: um]
 
     Repo.all(query)
   end
@@ -39,7 +39,7 @@ defmodule MangaWatcher.UserMangas do
         where: um.user_id == ^user_id,
         where: m.id not in subquery(tagged_manga_ids(exclude_tags)),
         order_by: [desc: m.last_chapter - um.last_read_chapter, desc: m.updated_at],
-        preload: [user_mangas: um]
+        preload: [:tags, user_mangas: um]
 
     query
     |> with_any_tag(include_tags)
@@ -84,7 +84,7 @@ defmodule MangaWatcher.UserMangas do
     cond do
       manga.failed_updates > 5 -> :broken
       manga.last_chapter <= user_manga.last_read_chapter -> :read
-      dormant?(user_manga) -> :dormant
+      Series.manga_has_tag?(manga, @dormant_tag) -> :dormant
       true -> :unread
     end
   end

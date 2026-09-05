@@ -170,24 +170,42 @@ defmodule MangaWatcher.UserMangasTest do
       assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id)) == :read
     end
 
-    test "manga_state/1 is :unread when read recently", %{user: user} do
-      manga =
-        manga_for_user_fixture(user, %{
-          last_chapter: 5,
-          user_manga: %{last_read_chapter: 1, last_read_at: month_ago_plus(1)}
-        })
-
-      assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id)) == :unread
-    end
-
-    test "manga_state/1 is :dormant when not read for over a month", %{user: user} do
+    test "manga_state/1 is :unread without the dormant tag, however old the read", %{
+      user: user
+    } do
       manga =
         manga_for_user_fixture(user, %{
           last_chapter: 5,
           user_manga: %{last_read_chapter: 1, last_read_at: month_ago_plus(-1)}
         })
 
+      assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id)) == :unread
+    end
+
+    test "manga_state/1 is :dormant when tagged dormant with unread chapters", %{user: user} do
+      manga =
+        manga_for_user_fixture(user, %{last_chapter: 5, user_manga: %{last_read_chapter: 1}})
+
+      {:ok, _} = Series.add_manga_tag(manga, "dormant")
+
       assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id)) == :dormant
+    end
+
+    test "manga_state/1 is :read even when tagged dormant", %{user: user} do
+      manga =
+        manga_for_user_fixture(user, %{last_chapter: 5, user_manga: %{last_read_chapter: 5}})
+
+      {:ok, _} = Series.add_manga_tag(manga, "dormant")
+
+      assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id)) == :read
+    end
+
+    test "list_mangas/1 and filter_mangas/3 preload tags", %{user: user} do
+      manga = manga_for_user_fixture(user, %{tags: "seinen"})
+
+      assert [%{tags: [%{name: "seinen"}]}] = UserMangas.list_mangas(user.id)
+      assert [%{tags: [%{name: "seinen"}]}] = UserMangas.filter_mangas(user.id, [], [])
+      assert manga.id == hd(UserMangas.list_mangas(user.id)).id
     end
 
     defp dormant_manga(user, attrs \\ %{}) do

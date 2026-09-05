@@ -92,17 +92,21 @@ defmodule MangaWatcherWeb.MangaLiveTest do
       assert NaiveDateTime.compare(updated_um.last_read_at, user_manga.last_read_at) in [:gt, :eq]
     end
 
-    test "shows dormant mangas", %{conn: conn, user: user} do
-      month_and_a_day_ago =
-        NaiveDateTime.utc_now()
-        |> NaiveDateTime.shift(month: -1, day: -1)
-        |> NaiveDateTime.truncate(:second)
+    test "shows stale mangas", %{conn: conn, user: user} do
+      stale = manga_for_user_fixture(user, %{name: "Stale Manga", tags: "stale"})
 
+      {:ok, index_live, _html} = live(conn, ~p"/mangas")
+
+      assert index_live |> element("#mangas-#{stale.id}") |> render() =~ "⏳"
+    end
+
+    test "shows dormant mangas", %{conn: conn, user: user} do
       dormant =
         manga_for_user_fixture(user, %{
           name: "Dormant Manga",
           last_chapter: 10,
-          user_manga: %{last_read_chapter: 1, last_read_at: month_and_a_day_ago}
+          tags: "dormant",
+          user_manga: %{last_read_chapter: 1}
         })
 
       {:ok, index_live, _html} = live(conn, ~p"/mangas")

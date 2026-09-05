@@ -2,6 +2,7 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
   alias MangaWatcher.PreviewUploader
   use MangaWatcherWeb, :live_component
 
+  alias MangaWatcher.Series
   alias MangaWatcher.Series.Manga
   alias MangaWatcher.UserMangas
 
@@ -33,16 +34,32 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
         <span class="text-gray-400 dark:text-gray-500">
           {last_read_chapter(@manga)} / {@manga.last_chapter}
         </span>
-      <% :dormant -> %>
-        <span class="text-green-600 dark:text-green-300 font-bold">
-          {last_read_chapter(@manga)} / {@manga.last_chapter} 💤
-        </span>
-      <% :unread -> %>
+      <% state when state in [:unread, :dormant] -> %>
         <span class="text-green-600 dark:text-green-300 font-bold">
           {last_read_chapter(@manga)} / {@manga.last_chapter}
         </span>
     <% end %>
     """
+  end
+
+  @doc """
+  Emoji markers shown on their own line below the chapter count.
+  """
+  def manga_markers(assigns) do
+    assigns = assign(assigns, :markers, markers(assigns.manga))
+
+    ~H"""
+    <span :if={@markers != []}>{Enum.join(@markers, " ")}</span>
+    """
+  end
+
+  # tags the updater maintains, in display order
+  @tag_markers [{"dormant", "💤"}, {"stale", "⏳"}]
+
+  defp markers(%Manga{} = manga) do
+    tag_names = Series.load_manga_tags(manga).tags |> Enum.map(& &1.name)
+
+    for {tag, marker} <- @tag_markers, tag in tag_names, do: marker
   end
 
   def last_read_chapter(%Manga{} = manga) do
@@ -68,6 +85,9 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
           <dl class="">
             <dd>
               <.manga_chapters manga={@manga} />
+            </dd>
+            <dd>
+              <.manga_markers manga={@manga} />
             </dd>
           </dl>
         </div>
@@ -96,7 +116,8 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
     {:ok, user_manga} =
       UserMangas.update_user_manga(hd(manga.user_mangas), %{last_read_chapter: manga.last_chapter})
 
-    manga = %{manga | user_mangas: [user_manga]}
+    # reload so tags dropped by the read (e.g. dormant) disappear right away
+    manga = UserMangas.get_manga!(user_manga.user_id, manga.id)
 
     {:noreply, assign(socket, :manga, manga)}
   end
