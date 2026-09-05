@@ -2,7 +2,10 @@ defmodule MangaWatcher.Manga.UpdatePoller do
   use GenServer
 
   alias MangaWatcher.Series
+  alias MangaWatcher.UserMangas
   alias MangaWatcher.Manga.Updater
+
+  require Logger
 
   # seconds
   @interval 60
@@ -20,6 +23,9 @@ defmodule MangaWatcher.Manga.UpdatePoller do
   @impl true
   def handle_info(:tick, state) do
     with_job_metadata(fn ->
+      %{added: added, removed: removed} = UserMangas.sync_dormant_tags()
+      Logger.info("synced dormant tags: #{added} added, #{removed} removed")
+
       Series.list_mangas_for_update() |> Updater.batch_update()
     end)
 

@@ -21,17 +21,23 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
   end
 
   def manga_chapters(assigns) do
+    assigns = assign(assigns, :state, UserMangas.manga_state(assigns.manga))
+
     ~H"""
-    <%= cond do %>
-      <% @manga.failed_updates > 5 -> %>
+    <%= case @state do %>
+      <% :broken -> %>
         <span class="text-red-500 dark:text-red-500 font-bold">
           {last_read_chapter(@manga)} / {@manga.last_chapter}
         </span>
-      <% @manga.last_chapter <= last_read_chapter(@manga) -> %>
+      <% :read -> %>
         <span class="text-gray-400 dark:text-gray-500">
           {last_read_chapter(@manga)} / {@manga.last_chapter}
         </span>
-      <% true -> %>
+      <% :dormant -> %>
+        <span class="text-green-600 dark:text-green-300 font-bold">
+          {last_read_chapter(@manga)} / {@manga.last_chapter} 💤
+        </span>
+      <% :unread -> %>
         <span class="text-green-600 dark:text-green-300 font-bold">
           {last_read_chapter(@manga)} / {@manga.last_chapter}
         </span>

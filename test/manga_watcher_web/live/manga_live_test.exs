@@ -89,6 +89,29 @@ defmodule MangaWatcherWeb.MangaLiveTest do
       updated_um = UserMangas.get_manga!(user.id, manga.id).user_mangas |> hd()
       refute user_manga.last_read_chapter == updated_um.last_read_chapter
       assert updated_um.last_read_chapter == manga.last_chapter
+      assert NaiveDateTime.compare(updated_um.last_read_at, user_manga.last_read_at) in [:gt, :eq]
+    end
+
+    test "shows dormant mangas", %{conn: conn, user: user} do
+      month_and_a_day_ago =
+        NaiveDateTime.utc_now()
+        |> NaiveDateTime.shift(month: -1, day: -1)
+        |> NaiveDateTime.truncate(:second)
+
+      dormant =
+        manga_for_user_fixture(user, %{
+          name: "Dormant Manga",
+          last_chapter: 10,
+          user_manga: %{last_read_chapter: 1, last_read_at: month_and_a_day_ago}
+        })
+
+      {:ok, index_live, _html} = live(conn, ~p"/mangas")
+
+      assert index_live |> element("#mangas-#{dormant.id}") |> render() =~ "💤"
+
+      index_live |> element("#mangas-#{dormant.id} button", "Mark as read") |> render_click()
+
+      refute index_live |> element("#mangas-#{dormant.id}") |> render() =~ "💤"
     end
 
     test "filters mangas in listing", %{conn: conn, manga: manga, user: user} do

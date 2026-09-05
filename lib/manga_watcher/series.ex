@@ -17,6 +17,9 @@ defmodule MangaWatcher.Series do
     stale: %{hour: -24}
   }
 
+  # mangas with these tags are polled for updates at the slower "stale" rate
+  @slow_update_tags ["stale", "slow-burner", "still-reading", "dormant"]
+
   # SOURCES
 
   def list_websites do
@@ -143,7 +146,7 @@ defmodule MangaWatcher.Series do
 
   def list_mangas_for_update() do
     exclude_ids_query = manga_ids_with_tags(["broken", "completed"])
-    stale_manga_ids_query = manga_ids_with_tags(["stale", "slow-burner", "still-reading"])
+    stale_manga_ids_query = manga_ids_with_tags(@slow_update_tags)
 
     stale_cutoff = NaiveDateTime.shift(NaiveDateTime.utc_now(), @update_duration.stale)
     normal_cutoff = NaiveDateTime.shift(NaiveDateTime.utc_now(), @update_duration.normal)

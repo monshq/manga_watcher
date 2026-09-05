@@ -184,14 +184,29 @@ defmodule MangaWatcher.SeriesTest do
           tags: ["broken", "stale", "fresh_wink"]
         })
 
+      # Manga with "dormant" tag is polled at the slow rate, like "stale"
+      dormant_manga =
+        manga_fixture_with_tags(%{
+          updated_at: NaiveDateTime.add(now, -2, :day),
+          tags: ["dormant"]
+        })
+
+      fresh_dormant_manga =
+        manga_fixture_with_tags(%{
+          updated_at: NaiveDateTime.add(now, -12, :hour),
+          tags: ["dormant"]
+        })
+
       result = Series.list_mangas_for_update()
 
       result_ids = ids(result)
 
       assert stale_manga.id in result_ids
       assert normal_manga.id in result_ids
+      assert dormant_manga.id in result_ids
 
       refute fresh_stale_manga.id in result_ids
+      refute fresh_dormant_manga.id in result_ids
       refute fresh_normal_manga.id in result_ids
       refute broken_manga.id in result_ids
     end

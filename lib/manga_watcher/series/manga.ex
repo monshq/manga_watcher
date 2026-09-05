@@ -10,6 +10,8 @@ defmodule MangaWatcher.Series.Manga do
 
   import Ecto.Query
 
+  @type t :: %__MODULE__{}
+
   schema "mangas" do
     field :name, :string
     field :url, :string
