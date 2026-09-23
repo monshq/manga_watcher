@@ -4,7 +4,6 @@ defmodule MangaWatcherWeb.MangaLiveTest do
   import Phoenix.LiveViewTest
   import MangaWatcher.SeriesFixtures
 
-  alias MangaWatcher.Accounts
   alias MangaWatcher.Series
   alias MangaWatcher.UserMangas
 
@@ -16,6 +15,21 @@ defmodule MangaWatcherWeb.MangaLiveTest do
     _website = website_fixture(%{base_url: "http://mangasource.com"})
     manga = manga_for_user_fixture(opts.user)
     %{manga: manga}
+  end
+
+  defp tag_manga(manga, tags) do
+    {:ok, manga} =
+      manga
+      |> MangaWatcher.Repo.preload([:tags])
+      |> Series.update_manga(%{tags: tags})
+
+    manga
+  end
+
+  defp tag_prefs_cookie(include, exclude) do
+    %{include: include, exclude: exclude}
+    |> Jason.encode!()
+    |> URI.encode(&URI.char_unreserved?/1)
   end
 
   describe "Index" do
@@ -118,19 +132,60 @@ defmodule MangaWatcherWeb.MangaLiveTest do
       refute index_live |> element("#mangas-#{dormant.id}") |> render() =~ "💤"
     end
 
-    test "filters mangas in listing", %{conn: conn, manga: manga, user: user} do
-      {:ok, manga} =
-        manga
-        |> MangaWatcher.Repo.preload([:tags])
-        |> Series.update_manga(%{tags: "seinen"})
+    test "filters mangas by tag prefs from connect params", %{conn: conn, manga: manga} do
+      manga = tag_manga(manga, "seinen")
 
       {:ok, _index_live, html} = live(conn, ~p"/mangas")
       assert html =~ manga.name
 
-      {:ok, _} = Accounts.update_user_tag_prefs(user, [], ["seinen"])
+      {:ok, _index_live, html} =
+        conn
+        |> put_connect_params(%{"tag_prefs" => tag_prefs_cookie([], ["seinen"])})
+        |> live(~p"/mangas")
 
-      {:ok, _index_live, html} = live(conn, ~p"/mangas")
       refute html =~ manga.name
+    end
+
+    test "filters mangas by tag prefs cookie on disconnected render", %{conn: conn, manga: manga} do
+      manga = tag_manga(manga, "seinen")
+
+      html =
+        conn
+        |> put_req_cookie("tag_prefs", tag_prefs_cookie([], ["seinen"]))
+        |> get(~p"/mangas")
+        |> html_response(200)
+
+      refute html =~ manga.name
+    end
+
+    test "ignores malformed tag prefs cookie", %{conn: conn, manga: manga} do
+      {:ok, _index_live, html} =
+        conn
+        |> put_connect_params(%{"tag_prefs" => "%E0not-json"})
+        |> live(~p"/mangas")
+
+      assert html =~ manga.name
+    end
+
+    test "clicking a tag pushes updated prefs", %{conn: conn, manga: manga} do
+      manga = tag_manga(manga, "seinen")
+      tag = Series.list_tags() |> Enum.find(&(&1.name == "seinen"))
+
+      {:ok, index_live, _html} = live(conn, ~p"/mangas")
+
+      index_live
+      |> element("button[phx-value-id='#{tag.id}']")
+      |> render_click()
+
+      assert_push_event(index_live, "tag_prefs", %{include: ["seinen"], exclude: []})
+      assert render(index_live) =~ manga.name
+
+      index_live
+      |> element("button[phx-value-id='#{tag.id}']")
+      |> render_click()
+
+      assert_push_event(index_live, "tag_prefs", %{include: [], exclude: ["seinen"]})
+      refute render(index_live) =~ manga.name
     end
 
     test "deletes manga in listing", %{conn: conn, manga: manga} do

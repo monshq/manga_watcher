@@ -66,8 +66,25 @@ Hooks.MangaForm = {
   }
 }
 
+// Tag filter preferences are stored in a cookie. The server pushes updates,
+// and the raw value is sent back on every LiveView join (including live navigation).
+const TAG_PREFS_COOKIE = "tag_prefs"
+
+const readCookie = (name) => {
+  const entry = document.cookie.split("; ").find(c => c.startsWith(`${name}=`))
+  return entry ? entry.slice(name.length + 1) : null
+}
+
+window.addEventListener("phx:tag_prefs", ({ detail }) => {
+  const value = encodeURIComponent(JSON.stringify(detail))
+  document.cookie = `${TAG_PREFS_COOKIE}=${value}; path=/; max-age=31536000; SameSite=Lax`
+})
+
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
-let liveSocket = new LiveSocket("/live", Socket, { params: { _csrf_token: csrfToken }, hooks: Hooks })
+let liveSocket = new LiveSocket("/live", Socket, {
+  params: () => ({ _csrf_token: csrfToken, tag_prefs: readCookie(TAG_PREFS_COOKIE) }),
+  hooks: Hooks
+})
 
 // Show progress bar on live navigation and form submits
 topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" })

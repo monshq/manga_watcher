@@ -1,21 +1,21 @@
 defmodule MangaWatcherWeb.MangaLive.Index do
-  alias MangaWatcher.Accounts
   use MangaWatcherWeb, :live_view
 
   alias MangaWatcher.Series
   alias MangaWatcher.UserMangas
   alias MangaWatcher.Series.Manga
   alias MangaWatcher.Manga.Updater
+  alias MangaWatcherWeb.TagPrefs
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     user_id = socket.assigns.current_user.id
-    user = Accounts.get_user!(user_id)
+    {include_tags, exclude_tags} = socket |> TagPrefs.from_socket(session) |> TagPrefs.parse()
 
     socket
-    |> stream(:mangas, UserMangas.filter_mangas(user_id, user.include_tags, user.exclude_tags))
+    |> stream(:mangas, UserMangas.filter_mangas(user_id, include_tags, exclude_tags))
     |> assign(:tags, Series.list_tags())
-    |> assign(:user, user)
+    |> assign(include_tags: include_tags, exclude_tags: exclude_tags)
     |> then(&{:ok, &1})
   end
 
@@ -85,9 +85,7 @@ defmodule MangaWatcherWeb.MangaLive.Index do
 
     next_state = next_state_map[value["state"]]
 
-    user = socket.assigns.user
-    include_tags = user.include_tags
-    exclude_tags = user.exclude_tags
+    %{include_tags: include_tags, exclude_tags: exclude_tags} = socket.assigns
 
     include_tags =
       case next_state do
@@ -113,11 +111,12 @@ defmodule MangaWatcherWeb.MangaLive.Index do
           exclude_tags
       end
 
-    {:ok, user} = Accounts.update_user_tag_prefs(user, include_tags, exclude_tags)
+    user_id = socket.assigns.current_user.id
 
     socket
-    |> assign(:user, user)
-    |> stream(:mangas, UserMangas.filter_mangas(user.id, include_tags, exclude_tags), reset: true)
+    |> assign(include_tags: include_tags, exclude_tags: exclude_tags)
+    |> push_event("tag_prefs", %{include: include_tags, exclude: exclude_tags})
+    |> stream(:mangas, UserMangas.filter_mangas(user_id, include_tags, exclude_tags), reset: true)
     |> then(&{:noreply, &1})
   end
 

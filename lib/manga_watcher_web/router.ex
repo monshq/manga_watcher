@@ -11,6 +11,7 @@ defmodule MangaWatcherWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers, %{"content-security-policy" => "default-src 'self' data:"}
     plug :fetch_current_user
+    plug MangaWatcherWeb.TagPrefs
 
     plug Plug.Static, at: "/images", from: {:app_name, "priv/static/images"}, gzip: false
 
