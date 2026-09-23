@@ -75,7 +75,12 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
         href={@manga.url}
         class="basis-[30%] grow-0 shrink-0 mr-3 flex aspect-[10/14]"
       >
-        <image src={PreviewUploader.url(@manga.preview)} class="object-cover" />
+        <img
+          src={PreviewUploader.url(@manga.preview, :thumb)}
+          loading="lazy"
+          decoding="async"
+          class="object-cover"
+        />
       </.link>
       <div class="grow flex flex-col justify-between">
         <div>

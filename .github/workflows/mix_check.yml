@@ -50,6 +50,8 @@ jobs:
         path: deps
         key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
         restore-keys: ${{ runner.os }}-mix-
+    - name: Install ImageMagick
+      run: sudo apt-get update && sudo apt-get install -y imagemagick
     - name: Install dependencies
       run: mix deps.get
     - name: Run tests

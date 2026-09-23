@@ -10,6 +10,12 @@
   grid-gap: 1rem;
 }
 
+/* skip rendering off-screen cards; 150px is a placeholder until a card is first rendered */
+.card-section > card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 150px;
+}
+
 /* @layer components { */
 /*   .bg-primary { */
 /*     background-color: red; */

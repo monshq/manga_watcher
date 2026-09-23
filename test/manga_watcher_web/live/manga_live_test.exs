@@ -41,6 +41,14 @@ defmodule MangaWatcherWeb.MangaLiveTest do
       assert html =~ "Manga Watcher"
     end
 
+    test "shows lazily loaded preview thumbnails", %{conn: conn, user: user} do
+      manga_for_user_fixture(user, %{preview: "cover.png"})
+
+      {:ok, _index_live, html} = live(conn, ~p"/")
+
+      assert html =~ ~r/<img src="[^"]*cover_thumb\.webp" loading="lazy"/
+    end
+
     test "saves new manga", %{conn: conn} do
       {:ok, index_live, _html} = live(conn, ~p"/mangas")
 

@@ -61,13 +61,22 @@ defmodule MangaWatcher.Manga.AttrFetcher do
 
     case downloader.download(new_preview, referer(url)) do
       {:ok, preview_bin} ->
-        PreviewUploader.store(%{
-          filename: preview_filename(name, new_preview),
-          binary: preview_bin
-        })
+        store_preview_binary(preview_filename(name, new_preview), preview_bin, name)
 
       {:error, error} ->
         Logger.error("could not download preview for #{name}: #{inspect(error)}")
+        {:ok, nil}
+    end
+  end
+
+  # thumbnail conversion fails when the download is not an image (e.g. a block page)
+  defp store_preview_binary(filename, binary, name) do
+    case PreviewUploader.store(%{filename: filename, binary: binary}) do
+      {:ok, filename} ->
+        {:ok, filename}
+
+      {:error, error} ->
+        Logger.error("could not store preview for #{name}: #{inspect(error)}")
         {:ok, nil}
     end
   end
