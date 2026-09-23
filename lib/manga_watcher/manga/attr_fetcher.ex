@@ -59,7 +59,7 @@ defmodule MangaWatcher.Manga.AttrFetcher do
        ) do
     Logger.debug("downloading preview from #{new_preview}")
 
-    case downloader.download(new_preview, get_referer(url)) do
+    case downloader.download(new_preview, referer(url)) do
       {:ok, preview_bin} ->
         PreviewUploader.store(%{
           filename: preview_filename(name, new_preview),
@@ -85,7 +85,8 @@ defmodule MangaWatcher.Manga.AttrFetcher do
     name <> ext
   end
 
-  defp get_referer(url) do
+  @doc "Referer sent with preview downloads, some websites block hotlinking without it."
+  def referer(url) do
     "https://" <> URI.parse(url).host
   rescue
     _ -> ""

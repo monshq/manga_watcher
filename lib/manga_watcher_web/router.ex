@@ -42,6 +42,16 @@ defmodule MangaWatcherWeb.Router do
     get "/tags", Api.TagController, :index
   end
 
+  # no authentication here, the reverse proxy blocks /api/agent from outside
+  scope "/api/agent", MangaWatcherWeb.Api do
+    pipe_through :api
+
+    post "/probe", AgentController, :probe
+    post "/test", AgentController, :test
+    get "/sources", AgentController, :index
+    put "/sources/:host", AgentController, :save
+  end
+
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:manga_watcher, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put

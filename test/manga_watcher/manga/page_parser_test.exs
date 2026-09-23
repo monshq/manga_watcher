@@ -62,4 +62,79 @@ defmodule MangaWatcher.Manga.PageParserTest do
              }
     end
   end
+
+  describe "parse/2 preview" do
+    defp preview_for(html, selector) do
+      page = "<h1>Name</h1><a href='/chapter-1'>1</a>#{html}"
+
+      website = %Website{
+        base_url: "site.com",
+        title_regex: "h1",
+        links_regex: "a",
+        preview_regex: selector
+      }
+
+      {:ok, %{preview: preview}} = PageParser.parse(page, website)
+      preview
+    end
+
+    test "falls back to lazy-load attributes when src is a placeholder" do
+      html =
+        ~s(<img class="cover" src="data:image/gif;base64,R0lGOD" data-src="https://cdn.site.com/c.jpg">)
+
+      assert preview_for(html, "img.cover") == "https://cdn.site.com/c.jpg"
+    end
+
+    test "reads og:image meta content" do
+      html = ~s(<meta property="og:image" content="https://cdn.site.com/og.jpg">)
+      assert preview_for(html, ~s(meta[property="og:image"])) == "https://cdn.site.com/og.jpg"
+    end
+
+    test "normalizes relative and protocol-relative urls" do
+      assert preview_for(~s(<img src="/c.jpg">), "img") == "http://site.com/c.jpg"
+
+      assert preview_for(~s(<img src="//cdn.site.com/c.jpg">), "img") ==
+               "https://cdn.site.com/c.jpg"
+    end
+  end
+
+  describe "diagnose/2" do
+    test "reports matches of working selectors" do
+      page = File.read!("test/support/fixtures/website_pages/asuratoon.html")
+
+      website = %Website{
+        base_url: "asuratoon.com",
+        title_regex: "h1.entry-title",
+        links_regex: "#chapterlist a",
+        preview_regex: ".thumbook img"
+      }
+
+      assert %{title: title, links: links, preview: preview} = PageParser.diagnose(page, website)
+
+      assert title.matches == 1
+      assert title.value == "Academy’s Undercover Professor"
+      assert links.max_chapter == 81
+      assert links.with_chapter > 0
+      assert [%{chapter: 81, href: href} | _] = links.samples
+      assert href =~ "chapter-81"
+      assert preview.matches == 1
+      assert preview.url =~ "Academys_Undercover_ProfessorCover_copy.png"
+    end
+
+    test "reports problems of bad selectors instead of failing" do
+      page = """
+      <h2 class="t">One</h2><h2 class="t">Two</h2>
+      <nav><a href="/home">Home</a><a href="/list">List</a></nav>
+      """
+
+      website = %Website{title_regex: "h2.t", links_regex: "nav a", preview_regex: "img.cover"}
+
+      assert %{title: title, links: links, preview: preview} = PageParser.diagnose(page, website)
+
+      assert title == %{matches: 2, value: nil, samples: ["One", "Two"]}
+      assert %{matches: 2, with_chapter: 0, max_chapter: nil} = links
+      assert [%{chapter: nil, href: "/home", text: "Home"} | _] = links.samples
+      assert preview == %{matches: 0, url: nil}
+    end
+  end
 end

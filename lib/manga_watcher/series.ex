@@ -91,6 +91,40 @@ defmodule MangaWatcher.Series do
     Repo.delete(website)
   end
 
+  def get_website_by_host(host), do: Repo.get_by(Website, base_url: host)
+
+  def list_manga_urls_for_host(host, limit) do
+    Repo.all(
+      from m in Manga,
+        where: like(m.url, ^host_url_pattern(host)),
+        order_by: [desc: m.updated_at],
+        limit: ^limit,
+        select: m.url
+    )
+  end
+
+  @doc """
+  Resets failure counters and removes the "broken" tag from all mangas of the
+  host, so that they are polled again after the website selectors change.
+  """
+  def unbreak_mangas_for_host(host) do
+    manga_ids = from m in Manga, where: like(m.url, ^host_url_pattern(host)), select: m.id
+    broken_tag_ids = from t in Tag, where: t.name == "broken", select: t.id
+
+    Repo.update_all(from(m in Manga, where: m.id in subquery(manga_ids)),
+      set: [failed_updates: 0]
+    )
+
+    Repo.delete_all(
+      from mt in "manga_tags",
+        where: mt.manga_id in subquery(manga_ids) and mt.tag_id in subquery(broken_tag_ids)
+    )
+
+    :ok
+  end
+
+  defp host_url_pattern(host), do: "%://#{host}/%"
+
   # TAGS
 
   def list_tags() do
