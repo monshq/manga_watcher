@@ -35,23 +35,31 @@ defmodule MangaWatcher.Manga.AttrFetcher do
     end
   end
 
-  defp store_preview(
-         %{existing_preview: original_preview} = input,
-         deps
-       )
-       when original_preview != nil do
-    if PreviewUploader.exists?(original_preview) do
-      {:ok, original_preview}
-    else
-      store_preview(Map.put(input, :existing_preview, nil), deps)
+  # the existing preview is kept whenever a new one cannot be stored, so an
+  # unreachable storage or a failed download never wipes it from the manga
+  defp store_preview(%{existing_preview: nil} = input, deps), do: download_preview(input, deps)
+
+  defp store_preview(%{existing_preview: existing, manga_name: name} = input, deps) do
+    case PreviewUploader.stored(existing) do
+      {:ok, true} ->
+        {:ok, existing}
+
+      {:ok, false} ->
+        download_preview(input, deps)
+
+      {:error, error} ->
+        Logger.error("could not check preview for #{name}: #{inspect(error)}")
+        {:ok, existing}
     end
   end
 
-  defp store_preview(%{preview_url: nil}, _deps), do: {:ok, nil}
+  defp download_preview(%{preview_url: nil, existing_preview: existing}, _deps),
+    do: {:ok, existing}
 
-  defp store_preview(
+  defp download_preview(
          %{
            preview_url: new_preview,
+           existing_preview: existing,
            manga_name: name,
            manga_url: url
          },
@@ -61,23 +69,23 @@ defmodule MangaWatcher.Manga.AttrFetcher do
 
     case downloader.download(new_preview, referer(url)) do
       {:ok, preview_bin} ->
-        store_preview_binary(preview_filename(name, new_preview), preview_bin, name)
+        store_preview_binary(preview_filename(name, new_preview), preview_bin, name, existing)
 
       {:error, error} ->
         Logger.error("could not download preview for #{name}: #{inspect(error)}")
-        {:ok, nil}
+        {:ok, existing}
     end
   end
 
   # thumbnail conversion fails when the download is not an image (e.g. a block page)
-  defp store_preview_binary(filename, binary, name) do
+  defp store_preview_binary(filename, binary, name, existing) do
     case PreviewUploader.store(%{filename: filename, binary: binary}) do
       {:ok, filename} ->
         {:ok, filename}
 
       {:error, error} ->
         Logger.error("could not store preview for #{name}: #{inspect(error)}")
-        {:ok, nil}
+        {:ok, existing}
     end
   end
 

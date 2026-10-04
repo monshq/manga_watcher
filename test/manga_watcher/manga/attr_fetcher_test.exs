@@ -45,7 +45,7 @@ defmodule MangaWatcher.Manga.AttrFetcherTest do
       assert attrs.name == "My Manga"
       assert attrs.last_chapter == 5
       assert String.ends_with?(attrs.preview, ".jpg")
-      assert PreviewUploader.exists?(attrs.preview, :thumb)
+      assert {:ok, true} = PreviewUploader.stored(attrs.preview, :thumb)
     end
 
     @tag :capture_log
@@ -163,6 +163,60 @@ defmodule MangaWatcher.Manga.AttrFetcherTest do
       assert {:ok, attrs} = AttrFetcher.fetch(manga_attrs, deps)
 
       assert attrs.preview == "existing_preview.jpg"
+    end
+
+    @tag :capture_log
+    test "keeps the existing preview if a new one cannot be stored" do
+      MangaWatcher.DownloaderMock
+      |> expect(:download, fn "https://mangasource.com/manga/1" ->
+        {:ok, "<html>ok</html>"}
+      end)
+      |> expect(:download, fn "https://cdn.mangasource.com/preview.jpg", _headers ->
+        {:ok, "<html>access denied</html>"}
+      end)
+
+      MangaWatcher.PageParserMock
+      |> expect(:parse, fn _html, _website ->
+        {:ok,
+         %{name: "My Manga", last_chapter: 5, preview: "https://cdn.mangasource.com/preview.jpg"}}
+      end)
+
+      deps = %{
+        downloader: MangaWatcher.DownloaderMock,
+        page_parser: MangaWatcher.PageParserMock
+      }
+
+      manga_attrs = %{url: "https://mangasource.com/manga/1", preview: "missing_preview.jpg"}
+
+      assert {:ok, attrs} = AttrFetcher.fetch(manga_attrs, deps)
+      assert attrs.preview == "missing_preview.jpg"
+    end
+
+    @tag :capture_log
+    test "keeps the existing preview if the preview download fails" do
+      MangaWatcher.DownloaderMock
+      |> expect(:download, fn "https://mangasource.com/manga/1" ->
+        {:ok, "<html>ok</html>"}
+      end)
+      |> expect(:download, fn "https://cdn.mangasource.com/preview.jpg", _headers ->
+        {:error, :timeout}
+      end)
+
+      MangaWatcher.PageParserMock
+      |> expect(:parse, fn _html, _website ->
+        {:ok,
+         %{name: "My Manga", last_chapter: 5, preview: "https://cdn.mangasource.com/preview.jpg"}}
+      end)
+
+      deps = %{
+        downloader: MangaWatcher.DownloaderMock,
+        page_parser: MangaWatcher.PageParserMock
+      }
+
+      manga_attrs = %{url: "https://mangasource.com/manga/1", preview: "missing_preview.jpg"}
+
+      assert {:ok, attrs} = AttrFetcher.fetch(manga_attrs, deps)
+      assert attrs.preview == "missing_preview.jpg"
     end
 
     test "does not return associations from existing manga attrs" do

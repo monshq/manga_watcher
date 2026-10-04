@@ -18,7 +18,7 @@ defmodule MangaWatcher.Tasks.GenerateThumbnails do
       Series.list_mangas_with_preview()
       |> Enum.map(& &1.preview)
       |> Enum.uniq()
-      |> Enum.reject(&PreviewUploader.exists?(&1, :thumb))
+      |> Enum.filter(&thumb_missing?/1)
 
     Logger.info("generating thumbnails for #{length(previews)} previews")
 
@@ -26,6 +26,17 @@ defmodule MangaWatcher.Tasks.GenerateThumbnails do
     failed = Enum.count(results, &match?({:error, _}, &1))
 
     Logger.info("generated #{length(previews) - failed} thumbnails, #{failed} failed")
+  end
+
+  defp thumb_missing?(preview) do
+    case PreviewUploader.stored(preview, :thumb) do
+      {:ok, stored?} ->
+        not stored?
+
+      {:error, error} ->
+        Logger.error("could not check thumbnail for #{preview}: #{inspect(error)}")
+        false
+    end
   end
 
   # re-stores the original as well, waffle has no way to store a single version

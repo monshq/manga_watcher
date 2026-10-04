@@ -52,21 +52,31 @@ defmodule MangaWatcher.PreviewUploader do
     "/images/default_preview.jpg"
   end
 
-  def exists?(name, version \\ :original)
+  @doc """
+  Checks whether a version is stored. Storage errors (e.g. S3 being unreachable)
+  are returned as errors, so callers do not mistake them for a missing file.
+  """
+  @spec stored(String.t() | nil, atom()) :: {:ok, boolean()} | {:error, any()}
+  def stored(name, version \\ :original)
 
-  def exists?(nil, _version), do: false
+  def stored(nil, _version), do: {:ok, false}
 
-  def exists?(name, version) do
+  def stored(name, version) do
     key = key(name, version)
 
     case Application.get_env(:waffle, :storage) do
       Waffle.Storage.S3 ->
-        match?({:ok, _}, ExAws.S3.head_object(bucket(), key) |> ExAws.request())
+        ExAws.S3.head_object(bucket(), key) |> ExAws.request() |> head_result()
 
       _ ->
-        File.exists?(local_path(key))
+        {:ok, File.exists?(local_path(key))}
     end
   end
+
+  @doc false
+  def head_result({:ok, _}), do: {:ok, true}
+  def head_result({:error, {:http_error, 404, _}}), do: {:ok, false}
+  def head_result({:error, reason}), do: {:error, reason}
 
   @doc "Reads the stored original, used to regenerate versions for existing previews."
   def read(name) do

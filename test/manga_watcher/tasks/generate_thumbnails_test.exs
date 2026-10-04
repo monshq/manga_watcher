@@ -26,11 +26,11 @@ defmodule MangaWatcher.Tasks.GenerateThumbnailsTest do
 
     manga_fixture(%{preview: "#{name}.png"})
 
-    refute PreviewUploader.exists?("#{name}.png", :thumb)
+    assert {:ok, false} = PreviewUploader.stored("#{name}.png", :thumb)
 
     GenerateThumbnails.run()
 
-    assert PreviewUploader.exists?("#{name}.png", :thumb)
+    assert {:ok, true} = PreviewUploader.stored("#{name}.png", :thumb)
     assert PreviewUploader.url("#{name}.png", :thumb) =~ "#{name}_thumb.webp"
   end
 end

@@ -19,7 +19,7 @@ defmodule MangaWatcher.Tasks.UpdateMissingImages do
 
     dead_preview =
       Series.list_mangas_with_preview()
-      |> Enum.reject(&PreviewUploader.exists?(&1.preview))
+      |> Enum.filter(&missing?(&1.preview))
 
     mangas = missing_preview ++ dead_preview
 
@@ -29,5 +29,17 @@ defmodule MangaWatcher.Tasks.UpdateMissingImages do
     )
 
     Updater.batch_update(mangas)
+  end
+
+  # storage errors are skipped, otherwise an unreachable storage marks every preview as dead
+  defp missing?(preview) do
+    case PreviewUploader.stored(preview) do
+      {:ok, stored?} ->
+        not stored?
+
+      {:error, error} ->
+        Logger.error("could not check preview #{preview}: #{inspect(error)}")
+        false
+    end
   end
 end
