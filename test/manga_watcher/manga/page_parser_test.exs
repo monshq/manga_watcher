@@ -63,6 +63,34 @@ defmodule MangaWatcher.Manga.PageParserTest do
     end
   end
 
+  describe "parse/2 locked chapters" do
+    # chapter 20 is in early access, its link looks the same as free chapters
+    @asurascans File.read!("test/support/fixtures/website_pages/asurascans.html")
+    @asura_locked ~S"number&quot;:\[0,(\d+)\][^}]*?is_premium&quot;:\[0,true\]"
+
+    defp asurascans_website(locked_regex) do
+      %Website{
+        base_url: "asurascans.com",
+        title_regex: "h1",
+        links_regex: ~s(a[href*="/chapter/"]),
+        preview_regex: ~s(meta[property="og:image"]),
+        locked_regex: locked_regex
+      }
+    end
+
+    test "ignores chapters captured by the locked regex" do
+      assert {:ok, %{last_chapter: 20}} = PageParser.parse(@asurascans, asurascans_website(nil))
+
+      assert {:ok, %{last_chapter: 19, name: "The Tale of Cultivation and Demon Extermination"}} =
+               PageParser.parse(@asurascans, asurascans_website(@asura_locked))
+    end
+
+    test "fails when the locked regex has no capture group" do
+      assert {:error, %ArgumentError{}} =
+               PageParser.parse(@asurascans, asurascans_website("is_premium&quot;:\\[0,true"))
+    end
+  end
+
   describe "parse/2 preview" do
     defp preview_for(html, selector) do
       page = "<h1>Name</h1><a href='/chapter-1'>1</a>#{html}"
@@ -119,6 +147,25 @@ defmodule MangaWatcher.Manga.PageParserTest do
       assert href =~ "chapter-81"
       assert preview.matches == 1
       assert preview.url =~ "Academys_Undercover_ProfessorCover_copy.png"
+    end
+
+    test "reports locked chapters and excludes them from the max chapter" do
+      website = asurascans_website(@asura_locked)
+
+      assert %{links: links, locked: locked} = PageParser.diagnose(@asurascans, website)
+
+      assert locked == %{matches: 1, chapters: [20]}
+      assert links.max_chapter == 19
+      assert [%{chapter: 20, locked: true}, %{chapter: 19, locked: false} | _] = links.samples
+    end
+
+    test "reports an invalid locked regex" do
+      website = asurascans_website("(unclosed")
+
+      assert %{links: %{max_chapter: 20}, locked: %{error: error}} =
+               PageParser.diagnose(@asurascans, website)
+
+      assert error =~ "missing closing parenthesis"
     end
 
     test "reports problems of bad selectors instead of failing" do

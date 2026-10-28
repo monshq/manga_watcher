@@ -20,11 +20,13 @@ defmodule MangaWatcher.Manga.PageParser do
         _ -> nil
       end
 
+    locked = locked_chapters(page, website.locked_regex)
+
     last_chapter =
       doc
       |> Floki.find(website.links_regex)
       |> Stream.map(&extract_chapter/1)
-      |> Stream.reject(&is_nil/1)
+      |> Stream.reject(&(is_nil(&1) or &1 in locked))
       |> Enum.max()
 
     res = %{name: extract_name(title_node), last_chapter: last_chapter, preview: preview}
@@ -44,11 +46,14 @@ defmodule MangaWatcher.Manga.PageParser do
   @spec diagnose(binary, Website.t()) :: map
   def diagnose(page, %Website{} = website) do
     {:ok, doc} = Floki.parse_document(page)
+    locked = safely(fn -> diagnose_locked(page, website.locked_regex) end)
+    locked_set = MapSet.new(locked[:chapters] || [])
 
     %{
       title: safely(fn -> diagnose_title(doc, website.title_regex) end),
-      links: safely(fn -> diagnose_links(doc, website.links_regex) end),
-      preview: safely(fn -> diagnose_preview(doc, website.preview_regex, website.base_url) end)
+      links: safely(fn -> diagnose_links(doc, website.links_regex, locked_set) end),
+      preview: safely(fn -> diagnose_preview(doc, website.preview_regex, website.base_url) end),
+      locked: locked
     }
   end
 
@@ -62,13 +67,16 @@ defmodule MangaWatcher.Manga.PageParser do
     }
   end
 
-  defp diagnose_links(doc, selector) do
+  defp diagnose_links(doc, selector, locked) do
     links =
       doc
       |> Floki.find(selector)
       |> Enum.map(fn node ->
+        chapter = extract_chapter(node)
+
         %{
-          chapter: extract_chapter(node),
+          chapter: chapter,
+          locked: chapter in locked,
           href: node |> Floki.attribute("href") |> List.first(),
           text: node |> Floki.text() |> String.trim()
         }
@@ -80,7 +88,11 @@ defmodule MangaWatcher.Manga.PageParser do
     %{
       matches: length(links),
       with_chapter: length(chapter_links),
-      max_chapter: chapter_links |> Enum.map(& &1.chapter) |> Enum.max(fn -> nil end),
+      max_chapter:
+        chapter_links
+        |> Enum.reject(& &1.locked)
+        |> Enum.map(& &1.chapter)
+        |> Enum.max(fn -> nil end),
       samples: Enum.take(if(chapter_links == [], do: links, else: chapter_links), @samples)
     }
   end
@@ -92,6 +104,23 @@ defmodule MangaWatcher.Manga.PageParser do
       matches: length(nodes),
       url: if(length(nodes) == 1, do: preview_url(hd(nodes), base_url))
     }
+  end
+
+  defp diagnose_locked(page, regex) do
+    chapters = locked_chapters(page, regex) |> Enum.sort(:desc)
+    %{matches: length(chapters), chapters: chapters}
+  end
+
+  defp locked_chapters(_page, regex) when regex in [nil, ""], do: MapSet.new()
+
+  defp locked_chapters(page, regex) do
+    regex
+    |> Regex.compile!()
+    |> Regex.scan(page, capture: :all_but_first)
+    |> MapSet.new(fn
+      [chapter | _] -> String.to_integer(chapter)
+      [] -> raise ArgumentError, "locked regex must capture the chapter number in a group"
+    end)
   end
 
   defp safely(fun) do

@@ -11,6 +11,8 @@ things with CSS selectors stored per website (source):
 - **title** - element with the manga name
 - **links** - chapter links, the highest chapter number is the latest chapter
 - **preview** - cover image
+- **locked** (optional) - regex over the raw html capturing numbers of chapters
+  that are listed but not readable yet (early access, premium)
 
 Your job is to find selectors that work and save them through the app api.
 
@@ -36,7 +38,7 @@ app downloads pages and previews, use `curl --max-time 180`.
 | Endpoint | Body | Returns |
 |---|---|---|
 | `POST /probe` | `{"url": ...}` | `verdict`, `reason`, `status`, `final_url`, `host`, `existing_source`, `html` |
-| `POST /test` | `{"urls": [...], "selectors": {"title", "links", "preview"}}` | `ok` and one report per url |
+| `POST /test` | `{"urls": [...], "selectors": {"title", "links", "preview", "locked"?}}` | `ok` and one report per url |
 | `PUT /sources/<host>` | `{"selectors": {...}, "verified_urls": [...], "confirm": false}` | 201 created, 200 updated, 409 needs confirmation, 422 tests failed, 400 bad input |
 | `GET /sources` | | all sources with `mangas`, `broken` counts and `sample_urls` |
 
@@ -50,9 +52,10 @@ A test report looks like:
   "url": "https://site.com/manga/foo", "ok": false, "verdict": "ok", "status": 200,
   "title":   {"matches": 2, "value": null, "samples": ["Foo", "Popular"]},
   "links":   {"matches": 140, "with_chapter": 138, "max_chapter": 179,
-              "samples": [{"chapter": 179, "href": "/foo/chapter-179", "text": "Chapter 179"}]},
+              "samples": [{"chapter": 179, "locked": false, "href": "/foo/chapter-179", "text": "Chapter 179"}]},
   "preview": {"matches": 1, "url": "https://cdn.site.com/foo.webp",
               "download": {"ok": true, "status": 200, "content_type": "image/webp", "bytes": 48213}},
+  "locked":  {"matches": 1, "chapters": [180]},
   "errors":  ["title selector matched 2 elements, expected exactly 1"]
 }
 ```
@@ -74,6 +77,16 @@ Pick selectors with these rules in mind, they are why "correct looking" CSS fail
   `data:` placeholders). `meta[property="og:image"]` is often the most stable
   choice. The app downloads it with a `Referer` of the site, it must return an
   image.
+- **locked** is a regex, not a CSS selector, and runs on the **raw html** as
+  downloaded (attribute values still html-escaped, e.g. `&quot;`). Its first
+  capture group must be the chapter number; every captured number is ignored
+  when finding the latest chapter, so the chapter is reported once it becomes
+  free. Only needed when locked chapters look the same as free ones in the
+  links (the lock is drawn by javascript from embedded data). `max_chapter`
+  in the report already excludes locked chapters. Omit it or send `null` when
+  the site has no locked chapters; saving without it clears an existing one.
+  Example for data like `number:[0,20],...,is_premium:[0,true]` in astro props:
+  `number&quot;:\[0,(\d+)\][^}]*?is_premium&quot;:\[0,true\]`.
 - Selectors are evaluated by Floki: standard CSS selectors work (tag, `.class`,
   `#id`, `[attr]`, `[attr="v"]`, `[attr*="v"]`, descendant, `>`, `+`, `~`,
   `:nth-child()`, `:first-child`, `:not()`, `:has()`, comma groups). Test
@@ -130,7 +143,8 @@ If they gave a site root, ask for a manga page.
 
 5. **Sanity check** what the parser returned, the api can't judge meaning:
    - `title.value` is the manga's name, not the site name or a section header;
-   - `links.max_chapter` matches the latest chapter visible on the page and
+   - `links.max_chapter` matches the latest chapter *readable without paying*
+     (if the newest listed chapter is early access, add a `locked` regex) and
      `links.samples` are chapters of *this* manga;
    - `preview.url` is this manga's cover, not a logo or another series.
 

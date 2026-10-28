@@ -251,6 +251,22 @@ defmodule MangaWatcher.SeriesTest do
       assert website.preview_regex == "some preview_regex"
     end
 
+    test "create_website/1 rejects an invalid locked regex" do
+      attrs = %{base_url: "site.com", title_regex: "h1", links_regex: "a", preview_regex: "img"}
+
+      assert {:ok, %Website{locked_regex: "chapter-(\\d+)"}} =
+               Series.create_website(Map.put(attrs, :locked_regex, "chapter-(\\d+)"))
+
+      assert {:error, changeset} =
+               Series.create_website(
+                 %{attrs | base_url: "other.com"}
+                 |> Map.put(:locked_regex, "(x")
+               )
+
+      assert %{locked_regex: [error]} = errors_on(changeset)
+      assert error =~ "is not a valid regex"
+    end
+
     test "create_website/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Series.create_website(@invalid_attrs)
     end

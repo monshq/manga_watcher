@@ -81,15 +81,23 @@ defmodule MangaWatcherWeb.Api.AgentController do
   end
 
   defp parse_selectors(%{"title" => title, "links" => links, "preview" => preview} = selectors) do
-    if Enum.all?([title, links, preview], &(is_binary(&1) and String.trim(&1) != "")) do
-      {:ok, %{title: title, links: links, preview: preview}}
-    else
-      {:error, "selectors must be non-empty strings, got: #{inspect(selectors)}"}
+    # locked is optional, only some websites have chapters that are not readable yet
+    locked = if selectors["locked"] in [nil, ""], do: nil, else: selectors["locked"]
+
+    cond do
+      not Enum.all?([title, links, preview], &(is_binary(&1) and String.trim(&1) != "")) ->
+        {:error, "selectors must be non-empty strings, got: #{inspect(selectors)}"}
+
+      not (is_nil(locked) or is_binary(locked)) ->
+        {:error, "locked selector must be a string, got: #{inspect(locked)}"}
+
+      true ->
+        {:ok, %{title: title, links: links, preview: preview, locked: locked}}
     end
   end
 
   defp parse_selectors(_selectors),
-    do: {:error, "selectors must be an object with title, links and preview"}
+    do: {:error, "selectors must be an object with title, links, preview and optional locked"}
 
   defp changeset_errors(changeset) do
     changeset

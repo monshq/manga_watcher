@@ -53,6 +53,27 @@ defmodule MangaWatcherWeb.Api.AgentControllerTest do
       assert conn
              |> post(~p"/api/agent/test", %{urls: [], selectors: @selectors})
              |> json_response(400)
+
+      assert conn
+             |> post(~p"/api/agent/test", %{
+               urls: @urls,
+               selectors: Map.put(@selectors, "locked", 1)
+             })
+             |> json_response(400)
+    end
+
+    test "accepts an optional locked regex", %{conn: conn} do
+      resp =
+        conn
+        |> post(~p"/api/agent/test", %{
+          urls: @urls,
+          selectors: Map.put(@selectors, "locked", "chapter-(81)")
+        })
+        |> json_response(200)
+
+      assert %{"ok" => true, "reports" => [report, _]} = resp
+      assert report["links"]["max_chapter"] == 80
+      assert report["locked"]["chapters"] == [81]
     end
   end
 

@@ -14,7 +14,12 @@ defmodule MangaWatcher.Sources do
 
   require Logger
 
-  @type selectors :: %{title: String.t(), links: String.t(), preview: String.t()}
+  @type selectors :: %{
+          title: String.t(),
+          links: String.t(),
+          preview: String.t(),
+          locked: String.t() | nil
+        }
 
   @min_verified_urls 2
   @existing_mangas_to_check 5
@@ -192,7 +197,8 @@ defmodule MangaWatcher.Sources do
     [
       field_error(:title, report.title) || title_error(report.title),
       field_error(:links, report.links) || links_error(report.links),
-      field_error(:preview, report.preview) || preview_error(report.preview)
+      field_error(:preview, report.preview) || preview_error(report.preview),
+      field_error(:locked, report.locked)
     ]
     |> Enum.reject(&is_nil/1)
   end
@@ -229,12 +235,18 @@ defmodule MangaWatcher.Sources do
     %{
       title_regex: selectors[:title],
       links_regex: selectors[:links],
-      preview_regex: selectors[:preview]
+      preview_regex: selectors[:preview],
+      locked_regex: selectors[:locked]
     }
   end
 
   defp selectors(%Website{} = website) do
-    %{title: website.title_regex, links: website.links_regex, preview: website.preview_regex}
+    %{
+      title: website.title_regex,
+      links: website.links_regex,
+      preview: website.preview_regex,
+      locked: website.locked_regex
+    }
   end
 
   defp source(nil), do: nil

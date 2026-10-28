@@ -22,6 +22,11 @@ defmodule MangaWatcherWeb.WebsiteLive.FormComponent do
         <.input field={@form[:title_regex]} type="text" label="Title regex" />
         <.input field={@form[:links_regex]} type="text" label="Links regex" />
         <.input field={@form[:preview_regex]} type="text" label="Preview regex" />
+        <.input
+          field={@form[:locked_regex]}
+          type="text"
+          label="Locked chapters regex (optional, captures chapter numbers in raw html)"
+        />
         <:actions>
           <.button phx-disable-with="Saving...">Save Website</.button>
         </:actions>

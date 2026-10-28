@@ -11,7 +11,12 @@ defmodule MangaWatcher.SourcesTest do
 
   @deps %{downloader: DownloaderMock}
   @page File.read!("test/support/fixtures/website_pages/asuratoon.html")
-  @selectors %{title: "h1.entry-title", links: "#chapterlist a", preview: ".thumbook img"}
+  @selectors %{
+    title: "h1.entry-title",
+    links: "#chapterlist a",
+    preview: ".thumbook img",
+    locked: nil
+  }
   @urls ["https://asuratoon.com/manga/a", "https://asuratoon.com/manga/b"]
 
   setup :verify_on_exit!
@@ -83,6 +88,23 @@ defmodule MangaWatcher.SourcesTest do
       assert Enum.any?(report.errors, &(&1 =~ "title selector matched"))
       assert Enum.any?(report.errors, &(&1 =~ "none has a chapter number"))
       assert Enum.any?(report.errors, &(&1 =~ "preview selector matched 0"))
+    end
+
+    test "excludes locked chapters and reports a broken locked regex" do
+      serve()
+
+      assert [report] =
+               Sources.test([hd(@urls)], %{@selectors | locked: "chapter-(81)"}, @deps)
+
+      assert report.ok
+      assert report.locked == %{matches: 1, chapters: [81]}
+      assert report.links.max_chapter == 80
+
+      assert [report] = Sources.test([hd(@urls)], %{@selectors | locked: "chapter-81"}, @deps)
+
+      refute report.ok
+      assert [error] = report.errors
+      assert error =~ "locked selector failed: locked regex must capture"
     end
 
     test "fails when the preview is protected from hotlinking" do
