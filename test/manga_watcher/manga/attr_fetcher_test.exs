@@ -15,6 +15,30 @@ defmodule MangaWatcher.Manga.AttrFetcherTest do
     verify_on_exit!()
   end
 
+  describe "preview_filename/3" do
+    test "combines a slug of the name with a hash of the manga url" do
+      assert AttrFetcher.preview_filename(
+               "My Manga: Part 2!",
+               "https://a.com/1",
+               "https://c.com/x.JPG"
+             ) =~
+               ~r/^my_manga_part_2_[0-9a-f]{12}\.jpg$/
+    end
+
+    test "is unique for names without latin letters" do
+      a = AttrFetcher.preview_filename("나 혼자만 레벨업", "https://a.com/1", "https://c.com/x.jpg")
+      b = AttrFetcher.preview_filename("転生したらスライム", "https://a.com/2", "https://c.com/x.jpg")
+
+      assert a =~ ~r/^[0-9a-f]{12}\.jpg$/
+      assert a != b
+    end
+
+    test "ignores the query string of the preview url" do
+      assert AttrFetcher.preview_filename("X", "https://a.com/1", "https://c.com/x.webp?w=300") =~
+               ~r/^x_[0-9a-f]{12}\.webp$/
+    end
+  end
+
   describe "fetch/2" do
     test "successfully finds website, parses page, and stores preview" do
       manga_attrs = %{

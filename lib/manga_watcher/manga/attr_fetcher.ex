@@ -69,7 +69,8 @@ defmodule MangaWatcher.Manga.AttrFetcher do
 
     case downloader.download(new_preview, referer(url)) do
       {:ok, preview_bin} ->
-        store_preview_binary(preview_filename(name, new_preview), preview_bin, name, existing)
+        filename = preview_filename(name, url, new_preview)
+        store_preview_binary(filename, preview_bin, name, existing)
 
       {:error, error} ->
         Logger.error("could not download preview for #{name}: #{inspect(error)}")
@@ -89,17 +90,25 @@ defmodule MangaWatcher.Manga.AttrFetcher do
     end
   end
 
-  defp preview_filename(manga_name, url) do
-    name =
-      manga_name
+  @doc """
+  Storage name of a manga preview. The readable part comes from the manga name,
+  the hash of the manga url keeps it unique, e.g. for names without latin letters.
+  """
+  def preview_filename(manga_name, manga_url, preview_url) do
+    slug =
+      (manga_name || "")
       |> String.downcase()
-      |> String.replace(~r/\s+/, "_")
-      |> String.replace(~r/[^A-z]+/, "")
+      |> String.replace(~r/[^a-z0-9]+/, "_")
+      |> String.trim("_")
+      |> String.slice(0, 60)
 
-    ext =
-      url |> Path.extname() |> String.downcase()
+    hash =
+      :crypto.hash(:sha256, manga_url) |> Base.encode16(case: :lower) |> binary_part(0, 12)
 
-    name <> ext
+    # the extension comes from the path only, query strings are not part of it
+    ext = (URI.parse(preview_url).path || "") |> Path.extname() |> String.downcase()
+
+    Enum.join(Enum.reject([slug, hash], &(&1 == "")), "_") <> ext
   end
 
   @doc "Referer sent with preview downloads, some websites block hotlinking without it."
