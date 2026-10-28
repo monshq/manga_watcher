@@ -232,11 +232,24 @@ defmodule MangaWatcher.SeriesTest do
 
     test "list_websites/0 returns websites sorted by mangas count" do
       website1 = website_fixture()
-      manga_fixture(%{url: website1.base_url <> "/1"})
+      manga_fixture(%{url: "https://#{website1.base_url}/1"})
       website2 = website_fixture()
-      manga_fixture(%{url: website2.base_url <> "/2"})
-      manga_fixture(%{url: website2.base_url <> "/3"})
+      manga_fixture(%{url: "https://#{website2.base_url}/2"})
+      manga_fixture(%{url: "https://#{website2.base_url}/3"})
       assert Series.list_websites() == [website2, website1]
+    end
+
+    test "website_counts/0 doesn't count mangas of hosts that contain the base url" do
+      id = System.unique_integer([:positive])
+      website = website_fixture(%{base_url: "example#{id}.com"})
+      other = website_fixture(%{base_url: "notexample#{id}.com"})
+      manga_fixture(%{url: "https://example#{id}.com/manga/1"})
+      manga_fixture(%{url: "https://notexample#{id}.com/manga/2"})
+      manga_fixture(%{url: "https://notexample#{id}.com/manga/3"})
+
+      counts = Series.website_counts()
+      assert counts[website.id].total == 1
+      assert counts[other.id].total == 2
     end
 
     test "get_website!/1 returns the website with given id" do

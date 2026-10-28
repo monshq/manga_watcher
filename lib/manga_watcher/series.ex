@@ -26,7 +26,7 @@ defmodule MangaWatcher.Series do
     query =
       from w in Website,
         left_join: m in Manga,
-        on: like(m.url, fragment("'%' || ? || '%'", w.base_url)),
+        on: like(m.url, fragment("'%://' || ? || '/%'", w.base_url)),
         group_by: w.id,
         order_by: [desc: count(m)]
 
@@ -37,7 +37,7 @@ defmodule MangaWatcher.Series do
     query =
       from w in Website,
         left_join: m in Manga,
-        on: like(m.url, fragment("'%' || ? || '%'", w.base_url)),
+        on: like(m.url, fragment("'%://' || ? || '/%'", w.base_url)),
         left_join: t in assoc(m, :tags),
         group_by: w.id,
         select: %{
@@ -123,6 +123,7 @@ defmodule MangaWatcher.Series do
     :ok
   end
 
+  # keep in sync with the join conditions in list_websites/0 and website_counts/0
   defp host_url_pattern(host), do: "%://#{host}/%"
 
   # TAGS
