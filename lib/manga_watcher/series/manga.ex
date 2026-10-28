@@ -20,8 +20,7 @@ defmodule MangaWatcher.Series.Manga do
 
     field :last_chapter, :integer
 
-    field :last_chapter_updated_at, :naive_datetime,
-      default: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    field :last_chapter_updated_at, :naive_datetime
 
     many_to_many :tags, Tag, join_through: "manga_tags", on_replace: :delete
 
@@ -48,7 +47,7 @@ defmodule MangaWatcher.Series.Manga do
     pre_create_changeset(attrs)
     |> cast(attrs, [:name, :url, :last_chapter, :preview])
     |> unique_constraint(:url)
-    |> put_last_chapter_updated_at()
+    |> put_change(:last_chapter_updated_at, now())
     |> put_tags_if_changed(attrs)
   end
 
@@ -111,15 +110,13 @@ defmodule MangaWatcher.Series.Manga do
 
   defp put_last_chapter_updated_at(changeset) do
     if get_change(changeset, :last_chapter) do
-      put_change(
-        changeset,
-        :last_chapter_updated_at,
-        NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-      )
+      put_change(changeset, :last_chapter_updated_at, now())
     else
       changeset
     end
   end
+
+  defp now, do: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
   defp put_tags_if_changed(cs, attrs) do
     if Map.has_key?(attrs, "tags") and is_binary(attrs["tags"]) do

@@ -87,6 +87,14 @@ defmodule MangaWatcher.SeriesTest do
       assert manga.url == valid_attrs.url
     end
 
+    test "create_manga/1 sets last_chapter_updated_at to the insert time without a chapter" do
+      before = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+      assert {:ok, %Manga{} = manga} = Series.create_manga(%{url: "http://mangasource.com/new"})
+      assert manga.last_chapter == nil
+      refute NaiveDateTime.before?(manga.last_chapter_updated_at, before)
+    end
+
     test "create_manga/1 with tags creates a manga and tags" do
       valid_attrs =
         Map.merge(default_manga_attrs(), %{
