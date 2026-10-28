@@ -154,23 +154,23 @@ defmodule MangaWatcher.UserMangasTest do
       assert updated.last_read_at == last_read_at
     end
 
-    test "manga_state/1 is :broken when updates keep failing", %{user: user} do
+    test "manga_state/2 is :broken when updates keep failing", %{user: user} do
       manga = manga_for_user_fixture(user, %{last_chapter: 5})
       {:ok, _} = MangaWatcher.Series.update_manga(manga, %{failed_updates: 6})
-      assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id)) == :broken
+      assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id), user.id) == :broken
     end
 
-    test "manga_state/1 is :read when there are no unread chapters", %{user: user} do
+    test "manga_state/2 is :read when there are no unread chapters", %{user: user} do
       manga =
         manga_for_user_fixture(user, %{
           last_chapter: 5,
           user_manga: %{last_read_chapter: 5, last_read_at: month_ago_plus(-10)}
         })
 
-      assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id)) == :read
+      assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id), user.id) == :read
     end
 
-    test "manga_state/1 is :unread without the dormant tag, however old the read", %{
+    test "manga_state/2 is :unread without the dormant tag, however old the read", %{
       user: user
     } do
       manga =
@@ -179,25 +179,25 @@ defmodule MangaWatcher.UserMangasTest do
           user_manga: %{last_read_chapter: 1, last_read_at: month_ago_plus(-1)}
         })
 
-      assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id)) == :unread
+      assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id), user.id) == :unread
     end
 
-    test "manga_state/1 is :dormant when tagged dormant with unread chapters", %{user: user} do
+    test "manga_state/2 is :dormant when tagged dormant with unread chapters", %{user: user} do
       manga =
         manga_for_user_fixture(user, %{last_chapter: 5, user_manga: %{last_read_chapter: 1}})
 
       {:ok, _} = Series.add_manga_tag(manga, "dormant")
 
-      assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id)) == :dormant
+      assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id), user.id) == :dormant
     end
 
-    test "manga_state/1 is :read even when tagged dormant", %{user: user} do
+    test "manga_state/2 is :read even when tagged dormant", %{user: user} do
       manga =
         manga_for_user_fixture(user, %{last_chapter: 5, user_manga: %{last_read_chapter: 5}})
 
       {:ok, _} = Series.add_manga_tag(manga, "dormant")
 
-      assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id)) == :read
+      assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id), user.id) == :read
     end
 
     test "list_mangas/1 and filter_mangas/3 preload tags", %{user: user} do
@@ -301,6 +301,50 @@ defmodule MangaWatcher.UserMangasTest do
       assert_raise(Ecto.NoResultsError, fn ->
         UserMangas.get_manga!(user.id + 1, manga.id)
       end)
+    end
+
+    test "unfollow_manga/2 keeps the manga while others follow it", %{user: user} do
+      other = user_fixture()
+      manga = manga_for_user_fixture(user)
+      {:ok, _} = UserMangas.create_user_manga(%{manga_id: manga.id, user_id: other.id})
+
+      assert :ok = UserMangas.unfollow_manga(user.id, manga.id)
+
+      assert_raise Ecto.NoResultsError, fn -> UserMangas.get_manga!(user.id, manga.id) end
+      assert UserMangas.get_manga!(other.id, manga.id)
+    end
+
+    test "unfollow_manga/2 deletes the manga when its last follower leaves", %{user: user} do
+      manga = manga_for_user_fixture(user)
+
+      assert :ok = UserMangas.unfollow_manga(user.id, manga.id)
+
+      assert_raise Ecto.NoResultsError, fn -> Series.get_manga!(manga.id) end
+    end
+
+    test "unfollow_manga/2 doesn't touch mangas the user doesn't follow", %{user: user} do
+      manga = manga_for_user_fixture(user_fixture())
+
+      assert {:error, :not_found} = UserMangas.unfollow_manga(user.id, manga.id)
+      assert Series.get_manga!(manga.id)
+    end
+
+    test "manga_state/2 uses the given user's progress", %{user: user} do
+      other = user_fixture()
+
+      manga =
+        manga_for_user_fixture(user, %{last_chapter: 10, user_manga: %{last_read_chapter: 10}})
+
+      {:ok, _} =
+        UserMangas.create_user_manga(%{
+          manga_id: manga.id,
+          user_id: other.id,
+          last_read_chapter: 3
+        })
+
+      manga = Series.get_manga!(manga.id)
+      assert UserMangas.manga_state(manga, user.id) == :read
+      assert UserMangas.manga_state(manga, other.id) == :unread
     end
   end
 end

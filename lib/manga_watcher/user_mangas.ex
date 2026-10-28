@@ -72,15 +72,26 @@ defmodule MangaWatcher.UserMangas do
   end
 
   @doc """
-  Reading state of a manga for the user whose `user_mangas` record is preloaded.
+  Returns the `UserManga` of `user_id` among the preloaded `user_mangas` of the manga.
+  """
+  @spec user_manga!(Manga.t(), integer()) :: UserManga.t()
+  def user_manga!(%Manga{user_mangas: user_mangas}, user_id) when is_list(user_mangas) do
+    Enum.find(user_mangas, &(&1.user_id == user_id)) ||
+      raise ArgumentError, "user #{user_id} does not follow the manga"
+  end
+
+  @doc """
+  Reading state of a manga for the given user, whose `user_mangas` record must be preloaded.
 
     * `:broken`  - updates keep failing
     * `:read`    - no unread chapters
     * `:dormant` - has unread chapters, but wasn't read for over a month
     * `:unread`  - has unread chapters
   """
-  @spec manga_state(Manga.t()) :: state()
-  def manga_state(%Manga{user_mangas: [%UserManga{} = user_manga | _]} = manga) do
+  @spec manga_state(Manga.t(), integer()) :: state()
+  def manga_state(%Manga{} = manga, user_id) do
+    user_manga = user_manga!(manga, user_id)
+
     cond do
       manga.failed_updates > 5 -> :broken
       manga.last_chapter <= user_manga.last_read_chapter -> :read
@@ -136,8 +147,33 @@ defmodule MangaWatcher.UserMangas do
     end
   end
 
-  def delete_manga(%Manga{} = manga) do
-    Repo.delete(manga)
+  @doc """
+  Removes the manga from the user's list. The manga itself is deleted once
+  nobody follows it anymore, so it stops being polled.
+  """
+  @spec unfollow_manga(integer(), integer()) :: :ok | {:error, :not_found}
+  def unfollow_manga(user_id, manga_id) do
+    Repo.transaction(fn ->
+      # lock the manga so that nobody starts following it while it's being deleted
+      Repo.one!(from m in Manga, where: m.id == ^manga_id, lock: "FOR UPDATE")
+
+      {deleted, _} =
+        Repo.delete_all(
+          from um in UserManga, where: um.user_id == ^user_id and um.manga_id == ^manga_id
+        )
+
+      if deleted == 0, do: Repo.rollback(:not_found)
+
+      unless Repo.exists?(from um in UserManga, where: um.manga_id == ^manga_id) do
+        Repo.delete_all(from m in Manga, where: m.id == ^manga_id)
+      end
+
+      :ok
+    end)
+    |> case do
+      {:ok, :ok} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   def change_manga(%Manga{} = manga, attrs \\ %{}) do

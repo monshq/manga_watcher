@@ -54,8 +54,8 @@ defmodule MangaWatcherWeb.MangaLive.Index do
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
-    manga = Series.get_manga!(id)
-    {:ok, _} = UserMangas.delete_manga(manga)
+    manga = UserMangas.get_manga!(socket.assigns.current_user.id, id)
+    :ok = UserMangas.unfollow_manga(socket.assigns.current_user.id, manga.id)
 
     socket
     |> stream_delete(:mangas, manga)
@@ -65,7 +65,12 @@ defmodule MangaWatcherWeb.MangaLive.Index do
 
   @impl true
   def handle_event("rescan", %{"id" => id}, socket) do
-    manga = Series.get_manga!(id) |> Updater.update()
+    user_id = socket.assigns.current_user.id
+    %Manga{id: id} = UserMangas.get_manga!(user_id, id)
+
+    # the updater needs every follower's record to tell whether the manga is dormant
+    Series.get_manga!(id) |> Updater.update()
+    manga = UserMangas.get_manga!(user_id, id)
 
     socket
     |> stream_insert(:mangas, manga)

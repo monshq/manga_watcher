@@ -22,21 +22,21 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
   end
 
   def manga_chapters(assigns) do
-    assigns = assign(assigns, :state, UserMangas.manga_state(assigns.manga))
+    assigns = assign(assigns, :state, UserMangas.manga_state(assigns.manga, assigns.user_id))
 
     ~H"""
     <%= case @state do %>
       <% :broken -> %>
         <span class="text-red-500 dark:text-red-500 font-bold">
-          {last_read_chapter(@manga)} / {@manga.last_chapter}
+          {last_read_chapter(@manga, @user_id)} / {@manga.last_chapter}
         </span>
       <% :read -> %>
         <span class="text-gray-400 dark:text-gray-500">
-          {last_read_chapter(@manga)} / {@manga.last_chapter}
+          {last_read_chapter(@manga, @user_id)} / {@manga.last_chapter}
         </span>
       <% state when state in [:unread, :dormant] -> %>
         <span class="text-green-600 dark:text-green-300 font-bold">
-          {last_read_chapter(@manga)} / {@manga.last_chapter}
+          {last_read_chapter(@manga, @user_id)} / {@manga.last_chapter}
         </span>
     <% end %>
     """
@@ -62,8 +62,8 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
     for {tag, marker} <- @tag_markers, tag in tag_names, do: marker
   end
 
-  def last_read_chapter(%Manga{} = manga) do
-    hd(manga.user_mangas).last_read_chapter
+  def last_read_chapter(%Manga{} = manga, user_id) do
+    UserMangas.user_manga!(manga, user_id).last_read_chapter
   end
 
   @impl true
@@ -89,7 +89,7 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
           </.link>
           <dl class="">
             <dd>
-              <.manga_chapters manga={@manga} />
+              <.manga_chapters manga={@manga} user_id={@user_id} />
             </dd>
             <dd>
               <.manga_markers manga={@manga} />
@@ -97,7 +97,7 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
           </dl>
         </div>
         <div class="mb-2 mr-2 flex justify-end md:gap-4 gap-1 flex-row whitespace-nowrap">
-          <%= if @manga.last_chapter != last_read_chapter(@manga) do %>
+          <%= if @manga.last_chapter != last_read_chapter(@manga, @user_id) do %>
             <button
               phx-click="mark_as_read"
               phx-target={@myself}
@@ -119,7 +119,9 @@ defmodule MangaWatcherWeb.MangaLive.MangaComponent do
     Logger.info("marking manga #{manga.name} as read")
 
     {:ok, user_manga} =
-      UserMangas.update_user_manga(hd(manga.user_mangas), %{last_read_chapter: manga.last_chapter})
+      manga
+      |> UserMangas.user_manga!(socket.assigns.user_id)
+      |> UserMangas.update_user_manga(%{last_read_chapter: manga.last_chapter})
 
     # reload so tags dropped by the read (e.g. dormant) disappear right away
     manga = UserMangas.get_manga!(user_manga.user_id, manga.id)

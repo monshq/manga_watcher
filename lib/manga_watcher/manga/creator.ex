@@ -30,7 +30,7 @@ defmodule MangaWatcher.Manga.Creator do
     |> Repo.transaction()
     |> case do
       {:ok, %{manga: manga, user_manga: user_manga}} ->
-        {:ok, %{user_manga | manga: Series.get_manga!(manga.id)}}
+        {:ok, %{user_manga | manga: UserMangas.get_manga!(user_id, manga.id)}}
 
       {:error, _step, reason, _changes_so_far} ->
         {:error, reason}

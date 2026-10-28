@@ -114,6 +114,20 @@ defmodule MangaWatcherWeb.MangaLiveTest do
       assert NaiveDateTime.compare(updated_um.last_read_at, user_manga.last_read_at) in [:gt, :eq]
     end
 
+    test "marks manga as read only for the current user", %{conn: conn, user: user} do
+      # the other user follows first, so their record comes first in the preload
+      other = MangaWatcher.AccountsFixtures.user_fixture()
+      manga = manga_for_user_fixture(other, %{last_chapter: 6})
+      {:ok, _} = UserMangas.create_user_manga(%{manga_id: manga.id, user_id: user.id})
+
+      {:ok, index_live, _html} = live(conn, ~p"/mangas")
+      index_live |> element("#mangas-#{manga.id} button", "Mark as read") |> render_click()
+
+      manga = Series.get_manga!(manga.id)
+      assert UserMangas.user_manga!(manga, user.id).last_read_chapter == 6
+      assert UserMangas.user_manga!(manga, other.id).last_read_chapter == 0
+    end
+
     test "shows stale mangas", %{conn: conn, user: user} do
       stale = manga_for_user_fixture(user, %{name: "Stale Manga", tags: "stale"})
 
@@ -204,6 +218,18 @@ defmodule MangaWatcherWeb.MangaLiveTest do
 
       assert index_live |> element("#manga-form button", "Delete") |> render_click()
       refute has_element?(index_live, "#mangas-#{manga.id}")
+    end
+
+    test "deleting a manga keeps it for other followers", %{conn: conn, manga: manga, user: user} do
+      other = MangaWatcher.AccountsFixtures.user_fixture()
+      {:ok, _} = UserMangas.create_user_manga(%{manga_id: manga.id, user_id: other.id})
+
+      {:ok, index_live, _html} = live(conn, ~p"/mangas/#{manga}/edit")
+      index_live |> element("#manga-form button", "Delete") |> render_click()
+
+      refute has_element?(index_live, "#mangas-#{manga.id}")
+      assert_raise Ecto.NoResultsError, fn -> UserMangas.get_manga!(user.id, manga.id) end
+      assert UserMangas.get_manga!(other.id, manga.id)
     end
   end
 end

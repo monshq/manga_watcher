@@ -16,6 +16,16 @@ defmodule MangaWatcher.Manga.CreatorTest do
       {:ok, user: user_fixture()}
     end
 
+    test "returns only the user's progress for a manga others follow", %{user: user} do
+      other = user_fixture()
+      manga = manga_for_user_fixture(other, %{url: "http://shared.manga"})
+
+      assert {:ok, result} = Creator.add_for_user(user.id, %{url: manga.url})
+
+      assert [%UserManga{user_id: user_id}] = result.manga.user_mangas
+      assert user_id == user.id
+    end
+
     test "reuses existing manga and creates user_manga", %{user: user} do
       manga = manga_fixture(%{url: "http://test.manga"})
 
