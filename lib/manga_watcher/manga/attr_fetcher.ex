@@ -1,4 +1,5 @@
 defmodule MangaWatcher.Manga.AttrFetcher do
+  alias MangaWatcher.Manga.AsuraApi
   alias MangaWatcher.Series
   alias MangaWatcher.PreviewUploader
 
@@ -12,8 +13,7 @@ defmodule MangaWatcher.Manga.AttrFetcher do
   def fetch(manga_attrs, deps \\ default_deps()) do
     with {:ok, url} <- Map.fetch(manga_attrs, :url),
          {:ok, website} <- Series.get_website_for_url(url),
-         {:ok, html_content} <- deps.downloader.download(url),
-         {:ok, attrs} <- deps.page_parser.parse(html_content, website),
+         {:ok, attrs} <- page_attrs(url, website, deps),
          Logger.info("found following attrs for manga: #{inspect(attrs)}"),
          {:ok, preview} <-
            store_preview(
@@ -32,6 +32,16 @@ defmodule MangaWatcher.Manga.AttrFetcher do
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  defp page_attrs(url, website, deps) do
+    if AsuraApi.handles?(url) do
+      AsuraApi.fetch(url, deps.downloader)
+    else
+      with {:ok, html_content} <- deps.downloader.download(url) do
+        deps.page_parser.parse(html_content, website)
+      end
     end
   end
 

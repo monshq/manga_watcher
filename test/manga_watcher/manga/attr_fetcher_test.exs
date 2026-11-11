@@ -298,5 +298,32 @@ defmodule MangaWatcher.Manga.AttrFetcherTest do
       assert {:ok, attrs} = AttrFetcher.fetch(manga_attrs, deps)
       assert attrs.tags == "shoujo-ai, yuri"
     end
+
+    test "takes asura attrs from its api instead of the page" do
+      website_fixture(base_url: "asurascans.com")
+      api_url = "https://api.asurascans.com/api/series/some-manga-f212c582"
+
+      MangaWatcher.DownloaderMock
+      |> expect(:download, fn ^api_url ->
+        {:ok, %{"series" => %{"title" => "Some Manga", "cover" => nil}}}
+      end)
+      |> expect(:download, fn ^api_url <> "/chapters" ->
+        {:ok, %{"data" => [%{"number" => 7, "is_premium" => false}]}}
+      end)
+
+      deps = %{
+        downloader: MangaWatcher.DownloaderMock,
+        page_parser: MangaWatcher.PageParserMock
+      }
+
+      assert {:ok, attrs} =
+               AttrFetcher.fetch(
+                 %{url: "https://asurascans.com/comics/some-manga-f212c582"},
+                 deps
+               )
+
+      assert attrs.name == "Some Manga"
+      assert attrs.last_chapter == 7
+    end
   end
 end
