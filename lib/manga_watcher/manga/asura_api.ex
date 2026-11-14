@@ -12,7 +12,7 @@ defmodule MangaWatcher.Manga.AsuraApi do
   @spec fetch(String.t(), module()) :: {:ok, map()} | {:error, term()}
   def fetch(url, downloader) do
     with {:ok, slug} <- slug(url),
-         {:ok, %{"series" => series}} <- get_json(downloader, @api_url <> slug),
+         {:ok, %{"series" => series}} <- get_series(downloader, slug),
          {:ok, %{"data" => chapters}} <- get_json(downloader, @api_url <> slug <> "/chapters") do
       last_chapter =
         chapters
@@ -35,6 +35,14 @@ defmodule MangaWatcher.Manga.AsuraApi do
     case URI.parse(url).path do
       "/comics/" <> slug when slug != "" -> {:ok, slug |> String.split("/") |> hd()}
       _ -> {:error, "not an asura comic url: #{url}"}
+    end
+  end
+
+  # slugs without the hash suffix get the same series wrapped in "data"
+  defp get_series(downloader, slug) do
+    case get_json(downloader, @api_url <> slug) do
+      {:ok, %{"data" => %{"series" => _} = series}} -> {:ok, series}
+      other -> other
     end
   end
 

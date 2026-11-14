@@ -58,6 +58,13 @@ defmodule MangaWatcher.Manga.AsuraApiTest do
       assert {:ok, %{last_chapter: 10}} = AsuraApi.fetch(@url, MangaWatcher.DownloaderMock)
     end
 
+    test "unwraps series returned in data" do
+      expect_api({:ok, %{"data" => @series}}, {:ok, %{"data" => [chapter(4)]}})
+
+      assert {:ok, %{name: "Absolute Regression", last_chapter: 4}} =
+               AsuraApi.fetch(@url, MangaWatcher.DownloaderMock)
+    end
+
     test "uses the series slug of chapter urls" do
       expect_api({:ok, @series}, {:ok, %{"data" => [chapter(3)]}})
 
