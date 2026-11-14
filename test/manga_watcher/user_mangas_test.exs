@@ -16,56 +16,40 @@ defmodule MangaWatcher.UserMangasTest do
       records |> Enum.map(& &1.id)
     end
 
-    test "filter_mangas/3 returns all user mangas with empty input", %{user: user} do
+    defp filter!(query) do
+      {:ok, filter} = MangaWatcher.MangaFilter.parse(query)
+      filter
+    end
+
+    test "filter_mangas/2 returns all user mangas with an empty filter", %{user: user} do
       manga = manga_for_user_fixture(user)
-      assert ids(UserMangas.filter_mangas(user.id, [], [])) == [manga.id]
-    end
-
-    test "filter_mangas/3 excludes correct tags", %{user: user} do
-      _m1 =
-        manga_for_user_fixture(user, %{url: "http://mangasource.com/1", tags: "seinen, school"})
-
-      _m2 = manga_for_user_fixture(user, %{url: "http://mangasource.com/2", tags: "shoujo"})
-      m3 = manga_for_user_fixture(user, %{url: "http://mangasource.com/3", tags: "josei"})
-
-      assert ids(UserMangas.filter_mangas(user.id, [], ["seinen", "shoujo"])) == [m3.id]
-    end
-
-    test "filter_mangas/3 includes correct tags", %{user: user} do
-      m1 =
-        manga_for_user_fixture(user, %{url: "http://mangasource.com/1", tags: "seinen, school"})
-
-      m2 = manga_for_user_fixture(user, %{url: "http://mangasource.com/2", tags: "shoujo"})
-      _m3 = manga_for_user_fixture(user, %{url: "http://mangasource.com/3", tags: "josei"})
-
-      # both mangas tie on unread count and updated_at, so their relative order is undefined
-      assert ids(UserMangas.filter_mangas(user.id, ["seinen", "shoujo"], [])) |> Enum.sort() ==
-               Enum.sort([m1.id, m2.id])
-    end
-
-    test "filter_mangas/3 correctly mixes include and exclude", %{user: user} do
-      _m1 =
-        manga_for_user_fixture(user, %{url: "http://mangasource.com/1", tags: "seinen, school"})
-
-      m2 = manga_for_user_fixture(user, %{url: "http://mangasource.com/2", tags: "shoujo"})
-      _m3 = manga_for_user_fixture(user, %{url: "http://mangasource.com/3", tags: "josei"})
-
-      mangas = UserMangas.filter_mangas(user.id, ["seinen", "shoujo"], ["school", "josei"])
-      assert ids(mangas) == [m2.id]
-    end
-
-    test "filter_mangas/3 returns all user mangas in correct order", %{user: user} do
-      m1 = manga_for_user_fixture(user, %{last_chapter: 10, user_manga: %{last_read_chapter: 7}})
-      m2 = manga_for_user_fixture(user, %{last_chapter: 15, user_manga: %{last_read_chapter: 13}})
-      m3 = manga_for_user_fixture(user, %{last_chapter: 20, user_manga: %{last_read_chapter: 19}})
-
       manga_for_user_fixture(user_fixture(), %{})
 
-      mangas = UserMangas.filter_mangas(user.id, [], [])
-      assert ids(mangas) == ids([m1, m2, m3])
+      assert ids(UserMangas.filter_mangas(user.id, filter!(""))) == [manga.id]
     end
 
-    test "list_mangas/1 and filter_mangas/3 preload only the current user's user_manga", %{
+    test "filter_mangas/2 keeps matching mangas in list order", %{user: user} do
+      m1 =
+        manga_for_user_fixture(user, %{
+          tags: "seinen, school",
+          last_chapter: 10,
+          user_manga: %{last_read_chapter: 7}
+        })
+
+      _m2 = manga_for_user_fixture(user, %{tags: "shoujo", last_chapter: 15})
+
+      m3 =
+        manga_for_user_fixture(user, %{
+          tags: "josei",
+          last_chapter: 20,
+          user_manga: %{last_read_chapter: 19}
+        })
+
+      assert ids(UserMangas.filter_mangas(user.id, filter!("(seinen | josei) -shoujo"))) ==
+               [m1.id, m3.id]
+    end
+
+    test "list_mangas/1 and filter_mangas/2 preload only the current user's user_manga", %{
       user: user
     } do
       other_user = user_fixture()
@@ -83,7 +67,7 @@ defmodule MangaWatcher.UserMangasTest do
       for {list_user, expected_chapter} <- [{user, 3}, {other_user, 8}] do
         for mangas <- [
               UserMangas.list_mangas(list_user.id),
-              UserMangas.filter_mangas(list_user.id, [], [])
+              UserMangas.filter_mangas(list_user.id, filter!(""))
             ] do
           assert [%{id: id, user_mangas: [user_manga]}] = mangas
           assert id == manga.id
@@ -200,11 +184,11 @@ defmodule MangaWatcher.UserMangasTest do
       assert UserMangas.manga_state(UserMangas.get_manga!(user.id, manga.id), user.id) == :read
     end
 
-    test "list_mangas/1 and filter_mangas/3 preload tags", %{user: user} do
+    test "list_mangas/1 and filter_mangas/2 preload tags", %{user: user} do
       manga = manga_for_user_fixture(user, %{tags: "seinen"})
 
       assert [%{tags: [%{name: "seinen"}]}] = UserMangas.list_mangas(user.id)
-      assert [%{tags: [%{name: "seinen"}]}] = UserMangas.filter_mangas(user.id, [], [])
+      assert [%{tags: [%{name: "seinen"}]}] = UserMangas.filter_mangas(user.id, filter!(""))
       assert manga.id == hd(UserMangas.list_mangas(user.id)).id
     end
 

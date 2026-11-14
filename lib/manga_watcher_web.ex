@@ -85,7 +85,6 @@ defmodule MangaWatcherWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import MangaWatcherWeb.CoreComponents
-      import MangaWatcherWeb.TagComponent
       import MangaWatcherWeb.Gettext
 
       # Shortcut for generating JS commands

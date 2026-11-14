@@ -5,6 +5,7 @@ defmodule MangaWatcher.UserMangas do
 
   import Ecto.Query, warn: false
 
+  alias MangaWatcher.MangaFilter
   alias MangaWatcher.Series
   alias MangaWatcher.Series.Manga
   alias MangaWatcher.Series.UserManga
@@ -32,31 +33,12 @@ defmodule MangaWatcher.UserMangas do
     Repo.all(query)
   end
 
-  def filter_mangas(user_id, include_tags, exclude_tags) do
-    query =
-      from m in Manga,
-        join: um in assoc(m, :user_mangas),
-        where: um.user_id == ^user_id,
-        where: m.id not in subquery(tagged_manga_ids(exclude_tags)),
-        order_by: [desc: m.last_chapter - um.last_read_chapter, desc: m.updated_at],
-        preload: [:tags, user_mangas: um]
-
-    query
-    |> with_any_tag(include_tags)
-    |> Repo.all()
-  end
-
-  defp with_any_tag(query, []), do: query
-
-  defp with_any_tag(query, tags) do
-    from m in query, where: m.id in subquery(tagged_manga_ids(tags))
-  end
-
-  defp tagged_manga_ids(tags) do
-    from m in Manga,
-      join: t in assoc(m, :tags),
-      where: t.name in ^tags,
-      select: m.id
+  @doc """
+  The user's mangas that pass the filter, in the same order as `list_mangas/1`.
+  """
+  @spec filter_mangas(integer(), MangaFilter.t()) :: [Manga.t()]
+  def filter_mangas(user_id, filter) do
+    user_id |> list_mangas() |> Enum.filter(&MangaFilter.match?(filter, &1, user_id))
   end
 
   def get_manga!(user_id, id) do

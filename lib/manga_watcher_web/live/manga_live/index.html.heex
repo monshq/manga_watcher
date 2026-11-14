@@ -1,23 +1,112 @@
 <div class="flex flex-col">
   <div class="p-1.5 min-w-full inline-block align-middle">
     <div class="shadow overflow-hidden dark:border-gray-700 dark:shadow-gray-900 min-h-12">
-      <div class="my-1 md:px-2 md:py-5 flex whitespace-nowrap overflow-x-auto">
-        <span class="py-2">
-          <button type="button" phx-click="show_all">
-            <div class="ml-4 text-xs inline-flex items-center font-bold leading-sm uppercase px-3 py-1
-            bg-blue-600 hover:bg-blue-700 text-white rounded-full">
-              Show all
-            </div>
+      <div id="manga-filter" class="my-1 px-4 py-2 text-sm">
+        <div class="flex items-center gap-3 min-h-8">
+          <button
+            type="button"
+            id="filter-toggle"
+            phx-click="toggle_editor"
+            aria-expanded={to_string(@editing)}
+            class="inline-flex items-center gap-1 font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+          >
+            <.icon name="hero-funnel" class="w-4 h-4" /> Filter
+            <.icon
+              name={if @editing, do: "hero-chevron-up", else: "hero-chevron-down"}
+              class="w-3 h-3"
+            />
           </button>
-        </span>
-        <%= for t <- @tags do %>
-          <.manga_tag
-            id={t.id}
-            name={t.name}
-            include={t.name in @include_tags}
-            exclude={t.name in @exclude_tags}
-          />
-        <% end %>
+          <span :if={not @editing} id="filter-summary" class="font-mono truncate">
+            <span class="dark:text-white">{@query}</span>
+            <span :if={not @show_all} class="text-gray-400 dark:text-gray-500">{@base_summary}</span>
+            <span :if={@show_all} class="text-gray-400 dark:text-gray-500">(default off)</span>
+          </span>
+          <.link
+            :if={not @editing and @query != ""}
+            patch={index_path(assigns, query: "")}
+            aria-label="Clear filter"
+            class="text-gray-400 hover:text-gray-700 dark:hover:text-white"
+          >
+            <.icon name="hero-x-mark" class="w-4 h-4" />
+          </.link>
+        </div>
+
+        <div :if={@editing} id="filter-editor" class="mt-2 flex flex-col gap-3">
+          <form id="filter-query-form" phx-submit="search" class="flex items-center gap-2">
+            <input
+              type="text"
+              name="q"
+              value={@query_input}
+              placeholder="isekai -harem (action | fantasy) is:unread site:asura unread:>5"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              phx-mounted={JS.focus()}
+              class="grow font-mono text-sm rounded-lg border-gray-300 dark:bg-slate-900 dark:border-gray-700 dark:text-white"
+            />
+            <button
+              type="submit"
+              class="px-3 py-2 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Apply
+            </button>
+          </form>
+          <p :if={@query_error} id="filter-query-error" class="text-red-600 dark:text-red-400">
+            {@query_error}
+          </p>
+
+          <div id="filter-tags" class="flex flex-wrap gap-2">
+            <.tag_chip
+              :for={t <- @tags}
+              name={t.name}
+              query_filter={@query_filter}
+              base_filter={@base_filter}
+              show_all={@show_all}
+            />
+          </div>
+
+          <form id="filter-base-form" phx-submit="save_base" class="flex items-center gap-2">
+            <label
+              for="filter-base-input"
+              class="text-gray-500 dark:text-gray-400 whitespace-nowrap"
+            >
+              Default on this browser
+            </label>
+            <input
+              type="text"
+              id="filter-base-input"
+              name="base"
+              value={@base_input}
+              placeholder="-is:broken -is:dormant -stale"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              class="grow font-mono text-sm rounded-lg border-gray-300 dark:bg-slate-900 dark:border-gray-700 dark:text-white"
+            />
+            <button
+              type="submit"
+              class="px-3 py-2 rounded-lg font-semibold border border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-slate-800"
+            >
+              Save
+            </button>
+            <.link
+              id="filter-show-all"
+              patch={index_path(assigns, show_all: not @show_all)}
+              class="px-3 py-2 font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-500 whitespace-nowrap"
+            >
+              {if @show_all, do: "Use default", else: "Ignore default"}
+            </.link>
+          </form>
+          <p :if={@base_error} id="filter-base-error" class="text-red-600 dark:text-red-400">
+            {@base_error}
+          </p>
+          <p
+            :for={tag <- unknown_tags(@tags, [@query_filter, @base_filter])}
+            class="text-amber-600 dark:text-amber-400"
+          >
+            No manga has the tag "{tag}"
+          </p>
+        </div>
       </div>
 
       <section class="min-w-full card-section" id="mangas" phx-update="stream">
@@ -41,7 +130,7 @@
   :if={@live_action in [:new, :edit]}
   id="manga-modal"
   show
-  on_cancel={JS.patch(~p"/mangas")}
+  on_cancel={JS.patch(index_path(assigns))}
 >
   <.live_component
     module={MangaWatcherWeb.MangaLive.FormComponent}
@@ -50,6 +139,6 @@
     title={@page_title}
     action={@live_action}
     manga={@manga}
-    patch={~p"/mangas"}
+    patch={index_path(assigns)}
   />
 </.modal>

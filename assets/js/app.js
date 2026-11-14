@@ -66,23 +66,23 @@ Hooks.MangaForm = {
   }
 }
 
-// Tag filter preferences are stored in a cookie. The server pushes updates,
-// and the raw value is sent back on every LiveView join (including live navigation).
-const TAG_PREFS_COOKIE = "tag_prefs"
+// The default manga filter of this browser is stored in a cookie. The server pushes
+// updates, and the raw value is sent back on every LiveView join (including live navigation).
+const FILTER_BASE_COOKIE = "filter_base"
 
 const readCookie = (name) => {
   const entry = document.cookie.split("; ").find(c => c.startsWith(`${name}=`))
   return entry ? entry.slice(name.length + 1) : null
 }
 
-window.addEventListener("phx:tag_prefs", ({ detail }) => {
-  const value = encodeURIComponent(JSON.stringify(detail))
-  document.cookie = `${TAG_PREFS_COOKIE}=${value}; path=/; max-age=31536000; SameSite=Lax`
+window.addEventListener("phx:filter_base", ({ detail }) => {
+  const value = encodeURIComponent(detail.value)
+  document.cookie = `${FILTER_BASE_COOKIE}=${value}; path=/; max-age=31536000; SameSite=Lax`
 })
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
-  params: () => ({ _csrf_token: csrfToken, tag_prefs: readCookie(TAG_PREFS_COOKIE) }),
+  params: () => ({ _csrf_token: csrfToken, filter_base: readCookie(FILTER_BASE_COOKIE) }),
   hooks: Hooks
 })
 

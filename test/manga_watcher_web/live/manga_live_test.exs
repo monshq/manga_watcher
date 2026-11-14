@@ -26,10 +26,10 @@ defmodule MangaWatcherWeb.MangaLiveTest do
     manga
   end
 
-  defp tag_prefs_cookie(include, exclude) do
-    %{include: include, exclude: exclude}
-    |> Jason.encode!()
-    |> URI.encode(&URI.char_unreserved?/1)
+  defp cookie(value), do: URI.encode(value, &URI.char_unreserved?/1)
+
+  defp legacy_cookie(include, exclude) do
+    %{include: include, exclude: exclude} |> Jason.encode!() |> cookie()
   end
 
   describe "Index" do
@@ -154,60 +154,163 @@ defmodule MangaWatcherWeb.MangaLiveTest do
       refute index_live |> element("#mangas-#{dormant.id}") |> render() =~ "💤"
     end
 
-    test "filters mangas by tag prefs from connect params", %{conn: conn, manga: manga} do
+    test "applies the default filter from connect params", %{conn: conn, manga: manga} do
       manga = tag_manga(manga, "seinen")
 
       {:ok, _index_live, html} = live(conn, ~p"/mangas")
       assert html =~ manga.name
 
-      {:ok, _index_live, html} =
+      {:ok, index_live, _html} =
         conn
-        |> put_connect_params(%{"tag_prefs" => tag_prefs_cookie([], ["seinen"])})
+        |> put_connect_params(%{"filter_base" => cookie("-seinen is:unread")})
         |> live(~p"/mangas")
 
-      refute html =~ manga.name
+      refute has_element?(index_live, "#mangas-#{manga.id}")
+      assert index_live |> element("#filter-summary") |> render() =~ "-seinen is:unread"
     end
 
-    test "filters mangas by tag prefs cookie on disconnected render", %{conn: conn, manga: manga} do
+    test "applies the default filter cookie on disconnected render", %{conn: conn, manga: manga} do
       manga = tag_manga(manga, "seinen")
 
       html =
         conn
-        |> put_req_cookie("tag_prefs", tag_prefs_cookie([], ["seinen"]))
+        |> put_req_cookie("filter_base", cookie("-seinen"))
         |> get(~p"/mangas")
         |> html_response(200)
 
       refute html =~ manga.name
     end
 
-    test "ignores malformed tag prefs cookie", %{conn: conn, manga: manga} do
-      {:ok, _index_live, html} =
-        conn
-        |> put_connect_params(%{"tag_prefs" => "%E0not-json"})
-        |> live(~p"/mangas")
+    test "converts the old tag prefs cookie into a default filter", %{conn: conn, manga: manga} do
+      manga = tag_manga(manga, "seinen")
 
-      assert html =~ manga.name
+      conn =
+        conn
+        |> put_req_cookie("tag_prefs", legacy_cookie(["josei", "shoujo"], ["seinen"]))
+        |> get(~p"/mangas")
+
+      refute html_response(conn, 200) =~ manga.name
+      assert conn.resp_cookies["filter_base"].value == cookie("(josei | shoujo) -seinen")
+      assert conn.resp_cookies["filter_base"].http_only == false
+      assert conn.resp_cookies["tag_prefs"].max_age == 0
     end
 
-    test "clicking a tag pushes updated prefs", %{conn: conn, manga: manga} do
-      manga = tag_manga(manga, "seinen")
-      tag = Series.list_tags() |> Enum.find(&(&1.name == "seinen"))
+    test "ignores a malformed default filter", %{conn: conn, manga: manga} do
+      for value <- ["%E0not-utf8", cookie("(seinen")] do
+        {:ok, index_live, _html} =
+          conn
+          |> put_connect_params(%{"filter_base" => value})
+          |> live(~p"/mangas")
 
+        assert has_element?(index_live, "#mangas-#{manga.id}")
+      end
+    end
+
+    test "hides the filter editor until asked", %{conn: conn, manga: manga} do
+      tag_manga(manga, "seinen")
       {:ok, index_live, _html} = live(conn, ~p"/mangas")
 
-      index_live
-      |> element("button[phx-value-id='#{tag.id}']")
-      |> render_click()
+      refute has_element?(index_live, "#filter-editor")
+      refute has_element?(index_live, "#filter-tags button")
 
-      assert_push_event(index_live, "tag_prefs", %{include: ["seinen"], exclude: []})
-      assert render(index_live) =~ manga.name
+      index_live |> element("#filter-toggle") |> render_click()
+      assert has_element?(index_live, "#filter-tags button", "seinen")
 
-      index_live
-      |> element("button[phx-value-id='#{tag.id}']")
-      |> render_click()
+      index_live |> element("#filter-toggle") |> render_click()
+      refute has_element?(index_live, "#filter-editor")
+    end
 
-      assert_push_event(index_live, "tag_prefs", %{include: [], exclude: ["seinen"]})
-      refute render(index_live) =~ manga.name
+    test "filters by the query in the URL on top of the default", %{conn: conn, user: user} do
+      stale = manga_for_user_fixture(user, %{name: "Stale One", tags: "stale, seinen"})
+      seinen = manga_for_user_fixture(user, %{name: "Seinen One", tags: "seinen"})
+      other = manga_for_user_fixture(user, %{name: "Other One", tags: "josei"})
+      conn = put_connect_params(conn, %{"filter_base" => cookie("-stale")})
+
+      {:ok, index_live, _html} = live(conn, ~p"/mangas?q=seinen")
+      assert has_element?(index_live, "#mangas-#{seinen.id}")
+      refute has_element?(index_live, "#mangas-#{stale.id}")
+      refute has_element?(index_live, "#mangas-#{other.id}")
+
+      # the query wins over the default
+      {:ok, index_live, _html} = live(conn, ~p"/mangas?q=stale")
+      assert has_element?(index_live, "#mangas-#{stale.id}")
+      refute has_element?(index_live, "#mangas-#{seinen.id}")
+      refute index_live |> element("#filter-summary") |> render() =~ "-stale"
+
+      {:ok, index_live, _html} = live(conn, ~p"/mangas?all=1")
+      assert has_element?(index_live, "#mangas-#{stale.id}")
+      assert has_element?(index_live, "#mangas-#{other.id}")
+    end
+
+    test "typing a query patches the URL", %{conn: conn, manga: manga, user: user} do
+      manga = tag_manga(manga, "seinen")
+      other = manga_for_user_fixture(user, %{name: "Other One", tags: "josei"})
+
+      {:ok, index_live, _html} = live(conn, ~p"/mangas")
+      index_live |> element("#filter-toggle") |> render_click()
+
+      index_live |> form("#filter-query-form", q: "seinen | (josei") |> render_submit()
+      assert index_live |> element("#filter-query-error") |> render() =~ "missing )"
+      assert has_element?(index_live, "#mangas-#{other.id}")
+
+      index_live |> form("#filter-query-form", q: " -josei ") |> render_submit()
+      assert_patch(index_live, ~p"/mangas?q=-josei")
+      refute has_element?(index_live, "#filter-query-error")
+      assert has_element?(index_live, "#mangas-#{manga.id}")
+      refute has_element?(index_live, "#mangas-#{other.id}")
+    end
+
+    test "clicking a tag cycles it in the query", %{conn: conn, manga: manga} do
+      manga = tag_manga(manga, "seinen")
+
+      {:ok, index_live, _html} = live(conn, ~p"/mangas?q=is:unread")
+      index_live |> element("#filter-toggle") |> render_click()
+      chip = element(index_live, "#filter-tags button", "seinen")
+
+      render_click(chip)
+      assert_patch(index_live, ~p"/mangas?#{[q: "is:unread seinen"]}")
+      assert has_element?(index_live, "#filter-tags button[data-state=include]", "seinen")
+      assert has_element?(index_live, "#mangas-#{manga.id}")
+
+      render_click(chip)
+      assert_patch(index_live, ~p"/mangas?#{[q: "is:unread -seinen"]}")
+      refute has_element?(index_live, "#mangas-#{manga.id}")
+
+      render_click(chip)
+      assert_patch(index_live, ~p"/mangas?#{[q: "is:unread"]}")
+      assert has_element?(index_live, "#mangas-#{manga.id}")
+    end
+
+    test "saves the default filter to the browser", %{conn: conn, manga: manga} do
+      manga = tag_manga(manga, "seinen")
+
+      {:ok, index_live, _html} = live(conn, ~p"/mangas")
+      index_live |> element("#filter-toggle") |> render_click()
+
+      index_live |> form("#filter-base-form", base: "-seinen -") |> render_submit()
+      assert has_element?(index_live, "#filter-base-error")
+      assert has_element?(index_live, "#mangas-#{manga.id}")
+
+      index_live |> form("#filter-base-form", base: "-seinen -nosuchtag") |> render_submit()
+      assert_push_event(index_live, "filter_base", %{value: "-seinen -nosuchtag"})
+      refute has_element?(index_live, "#mangas-#{manga.id}")
+      assert has_element?(index_live, "#filter-tags button[data-source=base]", "seinen")
+      assert render(index_live) =~ "nosuchtag"
+
+      index_live |> element("#filter-show-all") |> render_click()
+      assert_patch(index_live, ~p"/mangas?all=1")
+      assert has_element?(index_live, "#mangas-#{manga.id}")
+    end
+
+    test "keeps the filter when a manga is edited", %{conn: conn, manga: manga} do
+      manga = tag_manga(manga, "seinen")
+      {:ok, index_live, _html} = live(conn, ~p"/mangas?q=seinen")
+
+      index_live |> element("#mangas-#{manga.id} a", "Edit") |> render_click()
+      assert_patch(index_live, ~p"/mangas/#{manga}/edit")
+
+      index_live |> form("#manga-form", manga: %{tags: "seinen"}) |> render_submit()
+      assert_patch(index_live, ~p"/mangas?q=seinen")
     end
 
     test "deletes manga in listing", %{conn: conn, manga: manga} do
