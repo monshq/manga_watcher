@@ -15,6 +15,26 @@ defmodule MangaWatcher.Manga.AttrFetcherTest do
     verify_on_exit!()
   end
 
+  # an original without its thumb, as left behind by a failed thumb conversion
+  defp store_original_only(binary) do
+    storage_dir =
+      Path.join(
+        Application.get_env(:waffle, :storage_dir_prefix),
+        PreviewUploader.storage_dir(:original, nil)
+      )
+
+    name = "original_only_#{System.unique_integer([:positive])}"
+    File.mkdir_p!(storage_dir)
+    File.write!(Path.join(storage_dir, "#{name}.png"), binary)
+
+    on_exit(fn ->
+      File.rm(Path.join(storage_dir, "#{name}.png"))
+      File.rm(Path.join(storage_dir, "#{name}_thumb.webp"))
+    end)
+
+    "#{name}.png"
+  end
+
   describe "preview_filename/3" do
     test "combines a slug of the name with a hash of the manga url" do
       assert AttrFetcher.preview_filename(
@@ -190,6 +210,58 @@ defmodule MangaWatcher.Manga.AttrFetcherTest do
     end
 
     @tag :capture_log
+    test "generates a missing thumb from the stored original" do
+      name = store_original_only(@preview_image)
+
+      MangaWatcher.DownloaderMock
+      |> expect(:download, fn "https://mangasource.com/manga/1" -> {:ok, "<html>ok</html>"} end)
+
+      MangaWatcher.PageParserMock
+      |> expect(:parse, fn _html, _website ->
+        {:ok,
+         %{name: "My Manga", last_chapter: 5, preview: "https://cdn.mangasource.com/preview.jpg"}}
+      end)
+
+      deps = %{
+        downloader: MangaWatcher.DownloaderMock,
+        page_parser: MangaWatcher.PageParserMock
+      }
+
+      manga_attrs = %{url: "https://mangasource.com/manga/1", preview: name}
+      assert {:ok, attrs} = AttrFetcher.fetch(manga_attrs, deps)
+
+      assert attrs.preview == name
+      assert {:ok, true} = PreviewUploader.stored(name, :thumb)
+    end
+
+    @tag :capture_log
+    test "redownloads the preview if the stored original is not an image" do
+      name = store_original_only("<html>blocked</html>")
+
+      MangaWatcher.DownloaderMock
+      |> expect(:download, fn "https://mangasource.com/manga/1" -> {:ok, "<html>ok</html>"} end)
+      |> expect(:download, fn "https://cdn.mangasource.com/preview.jpg", _referer ->
+        {:ok, @preview_image}
+      end)
+
+      MangaWatcher.PageParserMock
+      |> expect(:parse, fn _html, _website ->
+        {:ok,
+         %{name: "My Manga", last_chapter: 5, preview: "https://cdn.mangasource.com/preview.jpg"}}
+      end)
+
+      deps = %{
+        downloader: MangaWatcher.DownloaderMock,
+        page_parser: MangaWatcher.PageParserMock
+      }
+
+      manga_attrs = %{url: "https://mangasource.com/manga/1", preview: name}
+      assert {:ok, attrs} = AttrFetcher.fetch(manga_attrs, deps)
+
+      assert attrs.preview != name
+      assert {:ok, true} = PreviewUploader.stored(attrs.preview, :thumb)
+    end
+
     test "keeps the existing preview if a new one cannot be stored" do
       MangaWatcher.DownloaderMock
       |> expect(:download, fn "https://mangasource.com/manga/1" ->

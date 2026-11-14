@@ -39,15 +39,10 @@ defmodule MangaWatcher.Tasks.GenerateThumbnails do
     end
   end
 
-  # re-stores the original as well, waffle has no way to store a single version
   defp generate(preview) do
-    with {:ok, binary} <- PreviewUploader.read(preview),
-         {:ok, _} <- PreviewUploader.store(%{filename: preview, binary: binary}) do
-      :ok
-    else
-      error ->
-        Logger.error("could not generate thumbnail for #{preview}: #{inspect(error)}")
-        {:error, error}
+    with {:error, error} <- PreviewUploader.generate_thumb(preview) do
+      Logger.error("could not generate thumbnail for #{preview}: #{inspect(error)}")
+      {:error, error}
     end
   end
 end

@@ -93,6 +93,21 @@ defmodule MangaWatcher.PreviewUploader do
     end
   end
 
+  @doc """
+  Generates the thumb of a stored original. Re-stores the original as well,
+  waffle has no way to store a single version.
+  """
+  @spec generate_thumb(String.t()) :: :ok | {:error, any()}
+  def generate_thumb(name) do
+    with {:ok, binary} <- read(name),
+         {:ok, _} <- store(%{filename: name, binary: binary}) do
+      :ok
+    else
+      {:error, error} -> {:error, error}
+      error -> {:error, error}
+    end
+  end
+
   # same layout as waffle uses when storing: <storage_dir>/<versioned file name>
   defp key(name, version) do
     file_name =

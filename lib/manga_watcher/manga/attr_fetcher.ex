@@ -52,7 +52,7 @@ defmodule MangaWatcher.Manga.AttrFetcher do
   defp store_preview(%{existing_preview: existing, manga_name: name} = input, deps) do
     case PreviewUploader.stored(existing) do
       {:ok, true} ->
-        {:ok, existing}
+        ensure_thumb(input, deps)
 
       {:ok, false} ->
         download_preview(input, deps)
@@ -60,6 +60,19 @@ defmodule MangaWatcher.Manga.AttrFetcher do
       {:error, error} ->
         Logger.error("could not check preview for #{name}: #{inspect(error)}")
         {:ok, existing}
+    end
+  end
+
+  # the thumb is what is shown, an original is stored without it when the
+  # thumb conversion fails. If the original cannot be converted, it is likely
+  # not an image, so the preview is downloaded again
+  defp ensure_thumb(%{existing_preview: existing, manga_name: name} = input, deps) do
+    with {:ok, false} <- PreviewUploader.stored(existing, :thumb),
+         {:error, error} <- PreviewUploader.generate_thumb(existing) do
+      Logger.error("could not generate thumbnail for #{name}: #{inspect(error)}")
+      download_preview(input, deps)
+    else
+      _ -> {:ok, existing}
     end
   end
 
